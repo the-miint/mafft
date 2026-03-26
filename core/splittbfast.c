@@ -2653,7 +2653,7 @@ static void alignparaphiles( int nseq, int *nlen, double *weight, char **seq, in
 
 
 
-int main( int argc, char *argv[] )
+int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int argc, char **argv, int (*callback)(int, int, char*))
 {
 	static char **name, **seq, **orialn;
 	static int *grpseq;
@@ -2683,35 +2683,62 @@ int main( int argc, char *argv[] )
 	static char com[1000];
 	int depth;
 	int aan;
+	int ien;
 
 	static Scores *scores;
 	static short *table1;
 	static char **tree;
 
+	char **tmpargv = NULL;
+	int val = 0;
 
+	if( ngui )
+	{
+		initglobalvariables();
+		njob = ngui;
+		nlenmax = 0;
+		for( i=0; i<njob; i++ )
+		{
+			ien = strlen( seqgui[i] );
+			if( ien > nlenmax ) nlenmax = ien;
+		}
+		infp = NULL;
+		tmpargv = AllocateCharMtx( argc, 0 );
+		for( i=0; i<argc; i++ ) tmpargv[i] = argv[i];
+		gmsg = 1;
+	}
 
 	arguments( argc, argv );
 
-	if( inputfile )
+	if( ngui )
 	{
-		infp = fopen( inputfile, "r" );
-		if( !infp )
-		{
-			fprintf( stderr, "Cannot open %s\n", inputfile );
-			exit( 1 );
-		}
+		for( i=0; i<argc; i++ )
+			argv[i] = tmpargv[i];
+		free( tmpargv );
 	}
 	else
-		infp = stdin;
+	{
+		if( inputfile )
+		{
+			infp = fopen( inputfile, "r" );
+			if( !infp )
+			{
+				fprintf( stderr, "Cannot open %s\n", inputfile );
+				return( GUI_ERROR );
+			}
+		}
+		else
+			infp = stdin;
 
-	getnumlen( infp );
-	rewind( infp );
+		getnumlen( infp );
+		rewind( infp );
+	}
 
 	if( njob < 2 )
 	{
 		fprintf( stderr, "At least 2 sequences should be input!\n"
-						 "Only %d sequence found.\n", njob ); 
-		exit( 1 );
+						 "Only %d sequence found.\n", njob );
+		return( GUI_ERROR );
 	}
 
 
@@ -2745,7 +2772,7 @@ int main( int argc, char *argv[] )
 		seq = AllocateCharMtx( njob, alloclen+1 );
 
 
-	nlen = AllocateIntVec( njob ); 
+	nlen = AllocateIntVec( njob );
 	tmpseq = calloc( nlenmax+1, sizeof( char )  );
 	pointt = AllocateIntMtx( njob, 0 );
 	grpseq = AllocateIntVec( nlenmax + 1 );
@@ -2753,18 +2780,26 @@ int main( int argc, char *argv[] )
 	whichgroup = (int *)calloc( njob, sizeof( int ) );
 	weight = (double *)calloc( njob, sizeof( double ) );
 
-	fprintf( stderr, "alloclen = %d in main\n", alloclen );
+	fprintf( stderr, "alloclen = %d in splittbfast_library\n", alloclen );
 
 	for( i=0; i<njob; i++ ) whichgroup[i] = 0;
 	for( i=0; i<njob; i++ ) weight[i] = 1.0;
 	for( i=0; i<njob; i++ ) order[i] = -1;
 
-	if( classsize == 1 )
-		readData_varlen( infp, name, nlen, seq );
+	if( ngui )
+	{
+		if( copydatafromgui( namegui, seqgui, name, nlen, seq ) )
+			return( GUI_ERROR );
+	}
 	else
-		readData_pointer( infp, name, nlen, seq );
+	{
+		if( classsize == 1 )
+			readData_varlen( infp, name, nlen, seq );
+		else
+			readData_pointer( infp, name, nlen, seq );
 
-	fclose( infp );
+		fclose( infp );
+	}
 
 	if( fromaln ) doalign = 1;
 
@@ -2776,7 +2811,7 @@ int main( int argc, char *argv[] )
 			if( strlen( seq[i] ) != nlenmax )
 			{
 				fprintf( stderr, "Input sequences must be aligned\n" );
-				exit( 1 );
+				return( GUI_ERROR );
 			}
 			strcpy( orialn[i], seq[i] );
 		}
@@ -2815,7 +2850,7 @@ int main( int argc, char *argv[] )
 			fprintf( stderr, "Seq %d, too short, %d characters\n", i+1, nlen[i] );
 			fprintf( stderr, "name = %s\n", name[i] );
 			fprintf( stderr, "seq = %s\n", seq[i] );
-			exit( 1 );
+			return( GUI_ERROR );
 //			continue;
 		}
 		if( nlen[i] > maxl ) maxl = nlen[i];
@@ -2826,7 +2861,7 @@ int main( int argc, char *argv[] )
 				fprintf( stderr, "Seq %d, too short.\n", i+1 );
 				fprintf( stderr, "name = %s\n", name[i] );
 				fprintf( stderr, "seq = %s\n", seq[i] );
-				exit( 1 );
+				return( GUI_ERROR );
 //				continue;
 			}
 			makepointtable_nuc( pointt[i], grpseq );
@@ -2838,7 +2873,7 @@ int main( int argc, char *argv[] )
 				fprintf( stderr, "Seq %d, too short.\n", i+1 );
 				fprintf( stderr, "name = %s\n", name[i] );
 				fprintf( stderr, "seq = %s\n", seq[i] );
-				exit( 1 );
+				return( GUI_ERROR );
 //				continue;
 			}
 			makepointtable( pointt[i], grpseq );
@@ -2863,7 +2898,7 @@ int main( int argc, char *argv[] )
 	if( c )
 	{
 		fprintf( stderr, "Illeagal character %c\n", c );
-		exit( 1 );
+		return( GUI_ERROR );
 	}
 
 	pid = (int)getpid();
@@ -3090,10 +3125,30 @@ int main( int argc, char *argv[] )
 #if DEBUG
 	fprintf( stderr, "writing alignment to stdout\n" );
 #endif
-	if( reorder )
-		writeData_reorder_pointer( stdout, njob, name, nlen, seq, order );
+	val = 0;
+	if( ngui )
+	{
+		ien = strlen( seq[0] );
+		if( ien > lgui )
+		{
+			fprintf( stderr, "alignmentlength = %d, gui allocated %d\n", ien, lgui );
+			val = GUI_LENGTHOVER;
+		}
+		else
+		{
+			for( i=0; i<njob; i++ )
+			{
+				strcpy( seqgui[i], seq[i] );
+			}
+		}
+	}
 	else
-		writeData_pointer( stdout, njob, name, nlen, seq );
+	{
+		if( reorder )
+			writeData_reorder_pointer( stdout, njob, name, nlen, seq, order );
+		else
+			writeData_pointer( stdout, njob, name, nlen, seq );
+	}
 #if IODEBUG
 	fprintf( stderr, "OSHIMAI\n" );
 #endif
@@ -3220,5 +3275,12 @@ int main( int argc, char *argv[] )
 
 	SHOWVERSION;
 
-	return( 0 );
+	return( val );
 }
+
+#ifndef MAFFT_LIBRARY_ONLY
+int main( int argc, char *argv[] )
+{
+	return splittbfast_library( 0, 0, NULL, NULL, argc, argv, NULL );
+}
+#endif
