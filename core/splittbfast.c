@@ -1206,6 +1206,17 @@ static int splitseq_mq( Scores *scores, int nin, int *nlen, char **seq, char **o
 	static int palloclen = 0;
 	double maxdist;
 
+	if( qinoya == -1 )
+	{
+		/* Top-level call: reset statics for library reuse */
+		groupid = 0;
+		branchid = 0;
+		if( mseq1 ) { FreeCharMtx( mseq1 ); mseq1 = NULL; }
+		if( mseq2 ) { FreeCharMtx( mseq2 ); mseq2 = NULL; }
+		palloclen = 0;
+		orderpos = NULL;
+	}
+
 	if( orderpos == NULL )
 		orderpos = order;
 	if( palloclen == 0 )
@@ -2655,21 +2666,21 @@ static void alignparaphiles( int nseq, int *nlen, double *weight, char **seq, in
 
 int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int argc, char **argv, int (*callback)(int, int, char*))
 {
-	static char **name, **seq, **orialn;
-	static int *grpseq;
-	static char *tmpseq;
-	static int  **pointt;
-	static int *nlen;
+	char **name = NULL, **seq = NULL, **orialn = NULL;
+	int *grpseq = NULL;
+	char *tmpseq = NULL;
+	int  **pointt = NULL;
+	int *nlen = NULL;
 	int i, st, en;
 	FILE *infp;
 	FILE *treefp;
 	char *treefile = NULL; //by Mathog
 	char c;
 	int alloclen;
-	static int *order;
-	static int *whichgroup;
-	static double *weight;
-	static char tmpname[B+100];
+	int *order = NULL;
+	int *whichgroup = NULL;
+	double *weight = NULL;
+	char tmpname[B+100];
 	int groupnum;
 	int groupid;
 	int pos;
@@ -2680,14 +2691,14 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 	int pscore;
 	char *pt;
 	int **tmpaminodis;
-	static char com[1000];
+	char com[1000];
 	int depth;
 	int aan;
 	int ien;
 
-	static Scores *scores;
-	static short *table1;
-	static char **tree;
+	Scores *scores = NULL;
+	short *table1 = NULL;
+	char **tree = NULL;
 
 	char **tmpargv = NULL;
 	int val = 0;
@@ -2695,6 +2706,9 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 	if( ngui )
 	{
 		initglobalvariables();
+		nunknown = 0;
+		maxdepth = 0;
+		ppid = 0;
 		njob = ngui;
 		nlenmax = 0;
 		for( i=0; i<njob; i++ )
@@ -2780,7 +2794,8 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 	whichgroup = (int *)calloc( njob, sizeof( int ) );
 	weight = (double *)calloc( njob, sizeof( double ) );
 
-	fprintf( stderr, "alloclen = %d in splittbfast_library\n", alloclen );
+	if( !ngui )
+		fprintf( stderr, "alloclen = %d in splittbfast_library\n", alloclen );
 
 	for( i=0; i<njob; i++ ) whichgroup[i] = 0;
 	for( i=0; i<njob; i++ ) weight[i] = 1.0;
@@ -2890,7 +2905,16 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 
 	initSignalSM();
 
-	initFiles();
+	if( ngui )
+	{
+		/* Library mode: redirect trace/pre files to /dev/null */
+		prep_g = fopen( "/dev/null", "w" );
+		trap_g = fopen( "/dev/null", "w" );
+	}
+	else
+	{
+		initFiles();
+	}
 
 	WriteOptions( trap_g );
 
@@ -3120,7 +3144,7 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 
 //	maketanni( name, seq,  njob, nlenmax, nlen );
 
-	fclose( trap_g );
+	/* trap_g will be closed by closeFiles() at cleanup */
 
 #if DEBUG
 	fprintf( stderr, "writing alignment to stdout\n" );
@@ -3274,6 +3298,22 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 	}
 
 	SHOWVERSION;
+
+	/* Cleanup globals for potential library reuse.
+	 * Note: name/seq/pointt are NOT freed here because splitseq_mq()
+	 * internally reallocates seq entries, making FreeCharMtx unsafe.
+	 * The fork()-based caller in MafftAligner handles cleanup via _exit().
+	 */
+	if( nlen ) free( nlen );
+	if( scores ) free( scores );
+	if( tmpseq ) free( tmpseq );
+	if( grpseq ) free( grpseq );
+	if( order ) free( order );
+	if( whichgroup ) free( whichgroup );
+	if( weight ) free( weight );
+	freeconstants();
+	closeFiles();
+	FreeCommonIP();
 
 	return( val );
 }
