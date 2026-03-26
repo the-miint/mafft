@@ -854,6 +854,17 @@ static int localcommonsextet_p( short *table, int *pointt )
 	static int *ct = NULL;
 	static int *cp;
 
+	/* Reset sentinel for library reuse: free statics when called with (NULL, NULL).
+	 * Without this, memo is allocated for the first call's tsize (4096 for DNA,
+	 * 46656 for protein). A subsequent call with a larger tsize writes past the
+	 * end of memo, causing heap corruption. See splittbfast_library() cleanup. */
+	if( table == NULL && pointt == NULL )
+	{
+		if( memo ) { free( memo ); memo = NULL; }
+		if( ct ) { free( ct ); ct = NULL; }
+		return 0;
+	}
+
 	if( !memo )
 	{
 		memo = (short *)calloc( tsize, sizeof( short ) );
@@ -946,8 +957,26 @@ static void pairalign( int nseq, int *nlen, char **seq, int *mem1, int *mem2, do
 	int i, j;
 #endif
 
+	/* Reset sentinel for library reuse: free statics when called with nseq == -1.
+	 * Without this, fftlog/effarr/mseq arrays are allocated for the first call's
+	 * njob and reused on subsequent calls. If njob increases, out-of-bounds access.
+	 * See splittbfast_library() cleanup. */
+	if( nseq == -1 )
+	{
+		if( effarr1 )
+		{
+			free( fftlog );       fftlog = NULL;
+			free( effarr1 );      effarr1 = NULL;
+			free( effarr2 );      effarr2 = NULL;
+			free( indication1 );  indication1 = NULL;
+			free( indication2 );  indication2 = NULL;
+			free( mseq1 );        mseq1 = NULL;
+			free( mseq2 );        mseq2 = NULL;
+		}
+		return;
+	}
 
-	if( effarr1 == NULL ) 
+	if( effarr1 == NULL )
 	{
 		fftlog = AllocateIntVec( nseq );
 		effarr1 = AllocateDoubleVec( nseq );
@@ -1202,19 +1231,29 @@ static int splitseq_mq( Scores *scores, int nin, int *nlen, char **seq, char **o
 	double shorter;
 	static char **mseq1 = NULL;
 	static char **mseq2 = NULL;
+	static int *mem1_static = NULL;  /* hoisted from inner block for reset sentinel */
+	static int *mem2_static = NULL;  /* hoisted from inner block for reset sentinel */
 	double *blastresults = NULL; // by Mathog, a guess
 	static int palloclen = 0;
 	double maxdist;
 
 	if( qinoya == -1 )
 	{
-		/* Top-level call: reset statics for library reuse */
+		/* Top-level entry point (called once per splittbfast_library invocation).
+		 * Reset stale statics from the previous call before proceeding with
+		 * the new alignment. Recursive calls pass qinoya >= 0, so this block
+		 * fires exactly once. Does NOT return — falls through to do real work.
+		 * See also: splittbfast_library() cleanup which calls dedicated reset
+		 * sentinels for localcommonsextet_p and pairalign. */
 		groupid = 0;
 		branchid = 0;
+		table1 = NULL;  /* freed at each use site, but null the dangling pointer */
 		if( mseq1 ) { FreeCharMtx( mseq1 ); mseq1 = NULL; }
 		if( mseq2 ) { FreeCharMtx( mseq2 ); mseq2 = NULL; }
 		palloclen = 0;
 		orderpos = NULL;
+		if( mem1_static ) { free( mem1_static ); mem1_static = NULL; }
+		if( mem2_static ) { free( mem2_static ); mem2_static = NULL; }
 	}
 
 	if( orderpos == NULL )
@@ -2405,8 +2444,10 @@ exit( 1 );
 		int v1 = 0, v2 = 0, v3 = 0;
 		int nlim;
 		int l;
-		static int *mem1 = NULL;
-		static int *mem2 = NULL;
+		/* mem1/mem2 use the function-scope statics directly so the
+		 * qinoya==-1 reset sentinel can free them between calls. */
+		#define mem1 mem1_static
+		#define mem2 mem2_static
 		char **parttree = NULL; // by Mathog
 
 #if TREE
@@ -2630,6 +2671,8 @@ exit( 1 );
 	free( closeh );
 	free( pickkouho );
 	free( tsukau );
+#undef mem1
+#undef mem2
 //	free( minscoreinpick );
 	return val;
 }
@@ -3299,11 +3342,33 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 
 	SHOWVERSION;
 
-	/* Cleanup globals for potential library reuse.
-	 * Note: name/seq/pointt are NOT freed here because splitseq_mq()
-	 * internally reallocates seq entries, making FreeCharMtx unsafe.
-	 * The fork()-based caller in MafftAligner handles cleanup via _exit().
+	/* Cleanup for library reuse.
+	 *
+	 * FreeCharMtx(seq) IS safe: splitseq_mq() calls ReallocateCharMtx()
+	 * which uses realloc() on individual seq[i] entries. The updated pointers
+	 * are valid and freeable. disttbfast.c line 5130 does the same.
+	 *
+	 * Reset sentinels free static locals in helper functions that allocate
+	 * buffers sized for a specific tsize/njob/nlenmax. Without this, a
+	 * subsequent call with different parameters causes heap buffer overflows
+	 * (e.g., localcommonsextet_p's memo: 4096 shorts for DNA, 46656 for protein).
 	 */
+
+	/* Free main data arrays */
+	if( name ) FreeCharMtx( name );
+	if( seq ) FreeCharMtx( seq );
+	if( orialn ) FreeCharMtx( orialn );
+	if( pointt )
+	{
+		if( !doalign )
+		{
+			for( i = 0; i < njob; i++ )
+				if( pointt[i] ) free( pointt[i] );
+		}
+		free( pointt );
+	}
+
+	/* Free simple allocations */
 	if( nlen ) free( nlen );
 	if( scores ) free( scores );
 	if( tmpseq ) free( tmpseq );
@@ -3311,6 +3376,12 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 	if( order ) free( order );
 	if( whichgroup ) free( whichgroup );
 	if( weight ) free( weight );
+
+	/* Reset sentinels: free static locals in helper functions */
+	localcommonsextet_p( NULL, NULL );
+	pairalign( -1, NULL, NULL, NULL, NULL, NULL, NULL );
+
+	/* Cleanup globals (matching disttbfast pattern) */
 	freeconstants();
 	closeFiles();
 	FreeCommonIP();
