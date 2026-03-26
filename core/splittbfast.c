@@ -3337,7 +3337,7 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 		strcat( com, " " );
 		strcat( com, resultfile );
 		fprintf( stderr, "%s\n", com );
-		system( com );
+		(void)system( com );
 	}
 
 	SHOWVERSION;

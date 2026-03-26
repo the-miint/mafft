@@ -23,7 +23,7 @@ else
 	# Uncomment the above line to use protein 3D 
 	# structural information.  Go language is required.
 
-	CC = gcc
+	CC ?= gcc
 	#CC = icc
 	CFLAGS = -O3
 	#CFLAGS = -O3 -fPIC
