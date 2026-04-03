@@ -19,6 +19,29 @@
 
 #define END_OF_VEC -1
 
+/* Log capture for library mode.
+ *
+ * When called via splittbfast_library() with ngui > 0, stderr and stdout
+ * are redirected to a temporary file.  On return the captured bytes are
+ * copied into mafft_log_buf so the caller can retrieve them with
+ * mafft_get_log().  This keeps every fprintf / reporterr message out of
+ * the caller's terminal without touching hundreds of call sites.
+ */
+static char  *mafft_log_buf = NULL;
+static size_t mafft_log_len = 0;
+
+const char *mafft_get_log(void)
+{
+	return mafft_log_buf ? mafft_log_buf : "";
+}
+
+void mafft_clear_log(void)
+{
+	free( mafft_log_buf );
+	mafft_log_buf = NULL;
+	mafft_log_len = 0;
+}
+
 static char *fastapath;
 static int doalign;
 static int fromaln;
@@ -2707,7 +2730,7 @@ static void alignparaphiles( int nseq, int *nlen, double *weight, char **seq, in
 
 
 
-int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int argc, char **argv, int (*callback)(int, int, char*))
+static int splittbfast_library_core( int ngui, int lgui, char **namegui, char **seqgui, int argc, char **argv, int (*callback)(int, int, char*))
 {
 	char **name = NULL, **seq = NULL, **orialn = NULL;
 	int *grpseq = NULL;
@@ -2762,7 +2785,6 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 		infp = NULL;
 		tmpargv = AllocateCharMtx( argc, 0 );
 		for( i=0; i<argc; i++ ) tmpargv[i] = argv[i];
-		gmsg = 1;
 	}
 
 	arguments( argc, argv );
@@ -3387,6 +3409,63 @@ int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int 
 	FreeCommonIP();
 
 	return( val );
+}
+
+/* ------------------------------------------------------------------ */
+/* Public wrapper: captures all stderr / stdout output into a buffer  */
+/* that the caller can retrieve with mafft_get_log().                 */
+/* ------------------------------------------------------------------ */
+int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int argc, char **argv, int (*callback)(int, int, char*))
+{
+	int result;
+	int saved_stderr = -1;
+	int saved_stdout = -1;
+	FILE *log_tmpfile = NULL;
+
+	if( ngui )
+	{
+		mafft_clear_log();
+
+		log_tmpfile = tmpfile();
+		if( log_tmpfile )
+		{
+			int tmpfd = fileno( log_tmpfile );
+			saved_stderr = dup( STDERR_FILENO );
+			saved_stdout = dup( STDOUT_FILENO );
+			dup2( tmpfd, STDERR_FILENO );
+			dup2( tmpfd, STDOUT_FILENO );
+		}
+	}
+
+	result = splittbfast_library_core( ngui, lgui, namegui, seqgui, argc, argv, callback );
+
+	if( saved_stderr >= 0 )
+	{
+		long log_size;
+
+		fflush( stderr );
+		fflush( stdout );
+
+		log_size = ftell( log_tmpfile );
+		if( log_size > 0 )
+		{
+			mafft_log_buf = (char *)malloc( log_size + 1 );
+			if( mafft_log_buf )
+			{
+				rewind( log_tmpfile );
+				mafft_log_len = fread( mafft_log_buf, 1, log_size, log_tmpfile );
+				mafft_log_buf[mafft_log_len] = '\0';
+			}
+		}
+
+		dup2( saved_stderr, STDERR_FILENO );
+		dup2( saved_stdout, STDOUT_FILENO );
+		close( saved_stderr );
+		close( saved_stdout );
+		fclose( log_tmpfile );
+	}
+
+	return result;
 }
 
 #ifndef MAFFT_LIBRARY_ONLY
