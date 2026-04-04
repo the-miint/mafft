@@ -1,8 +1,8 @@
 # MAFFT C Library API
 
-This document covers the C library interface for embedding MAFFT's PartTree
-alignment algorithm into other programs.  The library is built as
-`libmafft_parttree.a` and its public header is `core/mafft.h`.
+This document covers the C library interface for embedding MAFFT alignment
+into other programs.  The library is built as `libmafft_parttree.a` and its
+public header is `core/mafft_api.h`.
 
 ## Building
 
@@ -11,7 +11,7 @@ cd core
 make libmafft_parttree.a
 ```
 
-This produces a static library.  Link against it with `-lm -lpthread`:
+Link against it with `-lm -lpthread`:
 
 ```bash
 gcc -o myprogram myprogram.c -Lcore -lmafft_parttree -lm -lpthread
@@ -20,255 +20,193 @@ gcc -o myprogram myprogram.c -Lcore -lmafft_parttree -lm -lpthread
 Include the header:
 
 ```c
-#include "mafft.h"
+#include "mafft_api.h"
 ```
 
-## Functions
-
-### splittbfast_library
-
-```c
-int splittbfast_library(
-    int    ngui,
-    int    lgui,
-    char **namegui,
-    char **seqgui,
-    int    argc,
-    char **argv,
-    int  (*callback)(int, int, char *)
-);
-```
-
-Run a PartTree multiple sequence alignment.  Sequences are aligned in-place:
-on success each `seqgui[i]` is replaced with its aligned (gap-inserted)
-version.
-
-**Parameters**
-
-| Parameter  | Description |
-|------------|-------------|
-| `ngui`     | Number of input sequences.  Must be >= 2. |
-| `lgui`     | Maximum buffer length of each `seqgui[i]` entry.  The aligned sequences may be longer than the originals due to gap insertion; if the aligned length exceeds `lgui` the function returns `GUI_LENGTHOVER` instead of overflowing the buffer. |
-| `namegui`  | Array of `ngui` sequence name strings. |
-| `seqgui`   | Array of `ngui` sequence strings (unaligned on input, aligned on output).  Each buffer must be at least `lgui + 1` bytes. |
-| `argc`     | Length of `argv`. |
-| `argv`     | Algorithm arguments passed as a string array, the same flags that the internal `splittbfast` binary accepts (see [Arguments](#arguments) below).  `argv[0]` should be `"splittbfast"`. |
-| `callback` | Optional progress callback, or `NULL`.  See [Callback](#callback). |
-
-**Return value**
-
-| Value             | Meaning |
-|-------------------|---------|
-| `0`               | Success.  `seqgui` contains the aligned sequences. |
-| `GUI_ERROR` (1)   | Fatal error (bad input, sequence too short, illegal characters, etc.). |
-| `GUI_LENGTHOVER` (2) | Aligned length exceeds `lgui`.  Retry with a larger buffer. |
-| `GUI_CANCEL` (3)  | Cancelled via callback. |
-
-**Log capture**
-
-When `ngui > 0` (library mode), all diagnostic output that MAFFT would
-normally print to stderr and stdout is captured internally.  Nothing is
-written to the caller's stderr or stdout.  Use `mafft_get_log()` to
-retrieve the captured messages after the call returns.
-
----
-
-### disttbfast
-
-```c
-int disttbfast(
-    int    ngui,
-    int    lgui,
-    char **namegui,
-    char **seqgui,
-    int    argc,
-    char **argv,
-    int  (*callback)(int, int, char *)
-);
-```
-
-Run a progressive (FFT-NS / distance-based) multiple sequence alignment.
-Same calling convention as `splittbfast_library`.
-
-> **Note:** `disttbfast` does not yet capture log output.  Diagnostic
-> messages may still appear on stderr.
-
----
-
-### mafft_get_log
-
-```c
-const char *mafft_get_log(void);
-```
-
-Return a pointer to the captured log output from the most recent
-`splittbfast_library()` call.  The string is null-terminated.  Returns
-`""` (empty string, never `NULL`) if no log has been captured.
-
-The returned pointer is valid until the next call to `splittbfast_library()`
-or `mafft_clear_log()`.  Do not `free()` it.
-
----
-
-### mafft_clear_log
-
-```c
-void mafft_clear_log(void);
-```
-
-Free the internal log buffer.  After this call, `mafft_get_log()` returns
-`""`.  This is optional -- `splittbfast_library()` clears the previous log
-automatically before each run.
-
----
-
-## Arguments
-
-The `argv` array mirrors the flags accepted by the internal `splittbfast`
-binary.  Common combinations:
-
-| argv entry   | Meaning |
-|-------------|---------|
-| `"-D"`      | DNA mode. |
-| `"-f"`, `"-1.53"` | Gap open penalty. |
-| `"-Q"`, `"100"`   | SP score factor. |
-| `"-h"`, `"0"`     | Offset (gap extension modifier). |
-| `"-p"`, `"50"`    | Partition size (PartTree bucket size). |
-| `"-s"`, `"-1"`    | Group size.  `-1` means `njob + 1` (single group, full alignment). |
-
-A minimal DNA PartTree invocation:
-
-```c
-char *argv[] = {
-    "splittbfast",
-    "-D",           /* DNA */
-    "-f", "-1.53",  /* gap open */
-    "-Q", "100",    /* spfactor */
-    "-h", "0",      /* offset */
-    "-p", "50",     /* partsize */
-    "-s", "-1"      /* groupsize = njob+1 */
-};
-int argc = 12;
-```
-
----
-
-## Callback
-
-The optional callback allows the caller to monitor progress and cancel a
-running alignment.
-
-```c
-int my_callback(int reserved, int percent, char *stage);
-```
-
-| Parameter   | Description |
-|-------------|-------------|
-| `reserved`  | Currently always 0. |
-| `percent`   | Progress estimate, 0 -- 100. |
-| `stage`     | Human-readable phase name (e.g. `"Distance matrix"`, `"Guide tree"`, `"Progressive alignment"`). |
-
-**Return value:** return non-zero to cancel the alignment (the library
-function will return `GUI_CANCEL`).  Return 0 to continue.
-
-The callback is currently invoked by `disttbfast` at major phase
-transitions.  `splittbfast_library` accepts the parameter for API
-compatibility but does not call it.
-
----
-
-## Error codes
-
-Defined in `mafft.h`:
-
-```c
-#define GUI_ERROR      1   /* fatal error         */
-#define GUI_LENGTHOVER 2   /* output buffer too small */
-#define GUI_CANCEL     3   /* cancelled via callback  */
-```
-
----
-
-## Thread safety
-
-The library uses global mutable state internally.  It is **not**
-thread-safe.  Do not call any library function from multiple threads
-concurrently.  Sequential calls from the same thread are safe -- all
-internal state is reset between invocations.
-
----
-
-## Complete example
+## Quick start
 
 ```c
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include "mafft.h"
+#include "mafft_api.h"
 
 int main(void)
 {
-    int i;
-    int n = 3;
-    int l = 10000;  /* max aligned length */
+    mafft_config_t cfg;
+    mafft_config_init(&cfg);
+    cfg.strategy = MAFFT_STRATEGY_PARTTREE;
+    cfg.seqtype  = MAFFT_SEQ_DNA;
 
-    /* Allocate name and sequence arrays */
-    char **seq  = (char **)calloc(n, sizeof(char *));
-    char **name = (char **)calloc(n, sizeof(char *));
-    for (i = 0; i < n; i++) seq[i]  = calloc(l + 1, sizeof(char));
-    for (i = 0; i < n; i++) name[i] = calloc(100, sizeof(char));
+    mafft_ctx_t *ctx = mafft_create(&cfg);
+    if (!ctx) { fprintf(stderr, "OOM\n"); return 1; }
 
-    /* Fill in sequences */
-    strcpy(name[0], "s1");  strcpy(seq[0], "ACGTACGTACGT");
-    strcpy(name[1], "s2");  strcpy(seq[1], "ACGAACGTACGT");
-    strcpy(name[2], "s3");  strcpy(seq[2], "ACGTACGAACGT");
-
-    /* Build argv for DNA PartTree alignment */
-    int argc = 12;
-    char *argv[] = {
-        "splittbfast",
-        "-D", "-f", "-1.53", "-Q", "100",
-        "-h", "0", "-p", "50", "-s", "-1"
+    const char *names[] = { "s1", "s2", "s3" };
+    const char *seqs[]  = {
+        "ACGTACGTACGT",
+        "ACGAACGTACGT",
+        "ACGTACGAACGT"
     };
 
-    /* Run alignment -- nothing is printed to stderr/stdout */
-    int res = splittbfast_library(n, l, name, seq, argc, argv, NULL);
+    mafft_output_t *out = NULL;
+    mafft_stats_t stats;
+    int rc = mafft_align(ctx, names, seqs, 3, &out, &stats);
 
-    if (res == 0)
+    if (rc == MAFFT_OK)
     {
-        /* seq[0..n-1] now contain aligned sequences */
-        for (i = 0; i < n; i++)
-            printf(">%s\n%s\n", name[i], seq[i]);
+        for (int i = 0; i < out->n_seqs; i++)
+            printf(">%s\n%s\n", out->names[i], out->seqs[i]);
+        mafft_output_free(out);
     }
     else
     {
-        fprintf(stderr, "Alignment failed (code %d)\n", res);
-        /* Check log for diagnostic detail */
-        fprintf(stderr, "%s\n", mafft_get_log());
+        fprintf(stderr, "%s: %s\n",
+                mafft_strerror(rc), mafft_last_error(ctx));
     }
 
-    /* Optional: inspect diagnostic log */
-    const char *log = mafft_get_log();
-    if (log[0] != '\0')
-    {
-        /* log contains progress messages, version info, etc. */
-    }
-
-    mafft_clear_log();
-
-    /* Cleanup */
-    for (i = 0; i < n; i++) free(seq[i]);
-    free(seq);
-    for (i = 0; i < n; i++) free(name[i]);
-    free(name);
-
-    return res;
+    mafft_destroy(ctx);
+    return rc;
 }
 ```
 
-Compile and run:
+## Config
 
-```bash
-gcc -o example example.c -Lcore -lmafft_parttree -lm -lpthread
-./example
+Initialize with `mafft_config_init()` which sets `struct_size` and all
+defaults.  Modify fields as needed, then pass to `mafft_create()`.
+
+```c
+mafft_config_t cfg;
+mafft_config_init(&cfg);
 ```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `struct_size` | `size_t` | `sizeof(mafft_config_t)` | ABI version check. Do not set manually. |
+| `strategy` | `int` | `MAFFT_STRATEGY_AUTO` | Alignment strategy (see below). |
+| `seqtype` | `int` | `MAFFT_SEQ_AUTO` | `MAFFT_SEQ_DNA`, `_RNA`, `_PROTEIN`, or `_AUTO`. |
+| `max_iterate` | `int` | 0 | Max refinement iterations. 0 = strategy default. |
+| `retree` | `int` | 2 | Guide-tree rebuilding cycles. |
+| `partsize` | `int` | 50 | PartTree partition bucket size. |
+| `groupsize` | `int` | -1 | PartTree group size. -1 = njob+1 (single group). |
+| `gap_open` | `double` | 0.0 | Gap opening penalty. 0.0 = strategy default. |
+| `gap_extend` | `double` | 0.0 | Gap extension penalty. 0.0 = strategy default. |
+| `offset` | `double` | 0.0 | Offset value. 0.0 = strategy default. |
+| `n_threads` | `int` | 0 | Thread count. 0 = single-threaded. |
+| `seed` | `int64_t` | 0 | Random seed for determinism. |
+| `alloc_fn` | function pointer | `NULL` | Custom allocator for output. NULL = malloc. Must return 16-byte aligned. |
+| `free_fn` | function pointer | `NULL` | Custom deallocator for output. NULL = free. |
+| `alloc_ud` | `void *` | `NULL` | User data passed to alloc_fn/free_fn. |
+| `progress_cb` | function pointer | `NULL` | Progress callback. Return non-zero to cancel. |
+| `progress_ud` | `void *` | `NULL` | User data for progress callback. |
+| `log_cb` | function pointer | `NULL` | Log message callback. |
+| `log_ud` | `void *` | `NULL` | User data for log callback. |
+
+## Strategies
+
+| Constant | CLI equivalent | Description |
+|----------|----------------|-------------|
+| `MAFFT_STRATEGY_AUTO` | `mafft --auto` | Auto-select based on input size. |
+| `MAFFT_STRATEGY_FFTNS2` | `mafft --retree 2` | Fast progressive (FFT-NS-2). |
+| `MAFFT_STRATEGY_FFTNSI` | `mafft --retree 2 --maxiterate 2` | Progressive + refinement. |
+| `MAFFT_STRATEGY_LINSI` | `mafft --localpair --maxiterate 1000` | Most accurate for small datasets. |
+| `MAFFT_STRATEGY_GINSI` | `mafft --globalpair --maxiterate 1000` | Global pairwise + refinement. |
+| `MAFFT_STRATEGY_EINSI` | `mafft --genafpair --maxiterate 1000` | For sequences with large gaps. |
+| `MAFFT_STRATEGY_PARTTREE` | `mafft --parttree` | Fast for large datasets (10k+ seqs). |
+
+**Currently implemented:** `MAFFT_STRATEGY_PARTTREE`.  Others return
+`MAFFT_ERR_INVALID_INPUT` until later phases are complete.
+
+## Context lifecycle
+
+```c
+mafft_ctx_t *ctx = mafft_create(&cfg);  /* NULL on OOM or bad config */
+/* ... use ctx ... */
+mafft_destroy(ctx);                      /* safe to pass NULL */
+```
+
+Contexts are lightweight.  Multiple contexts can coexist, but `mafft_align()`
+is serialized by an internal mutex -- only one alignment runs at a time.
+Callers can safely call `mafft_align()` from different threads without
+external synchronization.
+
+## Alignment
+
+```c
+int mafft_align(mafft_ctx_t *ctx,
+                const char **names, const char **seqs, int n_seqs,
+                mafft_output_t **out, mafft_stats_t *stats);
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `ctx` | Context from `mafft_create()`. |
+| `names` | Array of `n_seqs` sequence name strings. |
+| `seqs` | Array of `n_seqs` unaligned sequence strings. |
+| `n_seqs` | Number of sequences. Must be >= 2. |
+| `out` | On success, receives a pointer to the output struct. |
+| `stats` | Optional (may be NULL). Receives timing and strategy info. |
+
+Input strings are not modified.  The function copies them internally.
+
+### Output struct
+
+```c
+typedef struct {
+    int          n_seqs;       /* number of aligned sequences */
+    int          aligned_len;  /* length of each aligned sequence (with gaps) */
+    const char **names;        /* array of n_seqs name strings */
+    const char **seqs;         /* array of n_seqs aligned sequence strings */
+    void        *_base;        /* internal -- do not touch */
+} mafft_output_t;
+```
+
+All data is packed into a single allocation.  Free with `mafft_output_free()`.
+
+### Stats struct
+
+```c
+typedef struct {
+    int     n_iterations;   /* refinement iterations performed */
+    int     strategy_used;  /* actual strategy (for MAFFT_STRATEGY_AUTO) */
+    double  elapsed_secs;   /* wall-clock time */
+} mafft_stats_t;
+```
+
+## Error codes
+
+| Code | Constant | Description |
+|------|----------|-------------|
+| 0 | `MAFFT_OK` | Success. |
+| -1 | `MAFFT_ERR_NOMEM` | Out of memory. |
+| -2 | `MAFFT_ERR_INVALID_INPUT` | Bad input (too few seqs, illegal chars, etc.). |
+| -3 | `MAFFT_ERR_INTERNAL` | Internal error. |
+| -4 | `MAFFT_ERR_CANCELLED` | Cancelled via progress callback. |
+| -5 | `MAFFT_ERR_OUTPUT_TOO_LARGE` | Aligned length exceeded internal buffer. |
+
+Use `mafft_strerror(code)` for a static category string, and
+`mafft_last_error(ctx)` for a detailed message from the last failed call.
+
+## Custom memory allocation
+
+Supply `alloc_fn` and `free_fn` in the config to control output memory
+allocation.  Internal working memory still uses `malloc`/`free`.
+
+```c
+cfg.alloc_fn = my_alloc;   /* must return 16-byte aligned */
+cfg.free_fn  = my_free;
+cfg.alloc_ud = my_context;
+```
+
+`mafft_output_free()` uses the allocator that was active when the output was
+created.  No context reference is needed at free time.
+
+## Thread safety
+
+`mafft_align()` acquires an internal mutex.  Multiple threads can call it
+concurrently -- calls are serialized automatically.  `mafft_create()`,
+`mafft_destroy()`, `mafft_output_free()`, `mafft_strerror()`, and
+`mafft_last_error()` are safe to call from any thread without locking.
+
+## Legacy API
+
+The original `splittbfast_library()` and `disttbfast()` functions in
+`core/mafft.h` remain functional but are deprecated.  New code should use
+`mafft_api.h`.

@@ -1,3 +1,11 @@
+/*
+ * Deprecated: use mafft_api.h for new code.
+ *
+ * This header exposes the original low-level library entry points.
+ * They remain functional but the mafft_api.h interface is preferred:
+ * it provides structured config, opaque context, log capture, and
+ * thread-safe access via an internal mutex.
+ */
 extern int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, char **argv, int (*callback)(int, int, char*));
 extern int splittbfast_library( int ngui, int lgui, char **namegui, char **seqgui, int argc, char **argv, int (*callback)(int, int, char*));
 extern const char *mafft_get_log(void);

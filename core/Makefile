@@ -226,9 +226,12 @@ splittbfast : $(OBJSPLITTBFAST)
 splittbfast_lib.$(OBJ) : splittbfast.c
 	$(CC) $(MYCFLAGS) -DMAFFT_LIBRARY_ONLY -fPIC -c -o $@ $<
 
+mafft_api.$(OBJ) : mafft_api.c mafft_api.h
+	$(CC) $(MYCFLAGS) -fPIC -c -o $@ $<
+
 OBJMAFFTPARTTREELIB = mtxutl.$(OBJ) io.$(OBJ) mltaln9.$(OBJ) tddis.$(OBJ) constants.$(OBJ) partSalignmm.$(OBJ) Lalignmm.$(OBJ) rna.$(OBJ) Salignmm.$(OBJ) Dalignmm.$(OBJ) \
 		    Falign.$(OBJ) Falign_localhom.$(OBJ) Galign11.$(OBJ) Lalign11.$(OBJ) genalign11.$(OBJ) SAalignmm.$(OBJ) MSalignmm.$(OBJ) \
-			splittbfast_lib.$(OBJ) defs.$(OBJ) fft.$(OBJ) fftFunctions.$(OBJ)
+			splittbfast_lib.$(OBJ) defs.$(OBJ) fft.$(OBJ) fftFunctions.$(OBJ) mafft_api.$(OBJ)
 
 libmafft_parttree.a : $(OBJMAFFTPARTTREELIB)
 	ar rcs $@ $(OBJMAFFTPARTTREELIB)
