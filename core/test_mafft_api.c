@@ -406,6 +406,98 @@ static void test_protein_vs_native(void)
 	mafft_destroy(ctx);
 }
 
+/* ---- Log callback tests ---- */
+
+typedef struct {
+	int count;
+	int has_gap_penalty;
+	int has_done;
+} log_cb_state_t;
+
+static void test_log_callback_fn(const char *msg, void *ud)
+{
+	log_cb_state_t *st = (log_cb_state_t *)ud;
+	st->count++;
+	if (strstr(msg, "Gap Penalty")) st->has_gap_penalty = 1;
+	if (strstr(msg, "Done.")) st->has_done = 1;
+}
+
+/* Count non-empty lines in a string */
+static int count_nonempty_lines(const char *s)
+{
+	int n = 0;
+	const char *p = s;
+	while (*p)
+	{
+		const char *eol = strchr(p, '\n');
+		int len = eol ? (int)(eol - p) : (int)strlen(p);
+		if (len > 0) n++;
+		if (eol) p = eol + 1; else break;
+	}
+	return n;
+}
+
+static void test_log_callback(void)
+{
+	log_cb_state_t st = {0, 0, 0};
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_PARTTREE;
+	cfg.seqtype = MAFFT_SEQ_DNA;
+	cfg.log_cb = test_log_callback_fn;
+	cfg.log_ud = &st;
+
+	mafft_ctx_t *ctx = mafft_create(&cfg);
+	mafft_output_t *out = NULL;
+	int rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, NULL);
+
+	CHECK(rc == MAFFT_OK, "log_cb: align succeeds");
+	CHECK(st.count > 0, "log_cb: callback was called");
+	CHECK(st.has_gap_penalty, "log_cb: received 'Gap Penalty' message");
+	CHECK(st.has_done, "log_cb: received 'Done.' message");
+
+	/* Callback count must equal number of non-empty lines in ctx log */
+	const char *log = mafft_ctx_log(ctx);
+	CHECK(log[0] != '\0', "log_cb: mafft_ctx_log also populated");
+	{
+		int expected = count_nonempty_lines(log);
+		CHECK(st.count == expected,
+		      "log_cb: callback count matches non-empty line count (no double delivery)");
+	}
+
+	if (out) mafft_output_free(out);
+	mafft_destroy(ctx);
+}
+
+static void test_null_log_callback(void)
+{
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_PARTTREE;
+	cfg.seqtype = MAFFT_SEQ_DNA;
+	/* log_cb is NULL (default) */
+
+	mafft_ctx_t *ctx = mafft_create(&cfg);
+	mafft_output_t *out = NULL;
+	int rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, NULL);
+
+	CHECK(rc == MAFFT_OK, "null log_cb: align succeeds");
+
+	/* Log should still be captured in context */
+	const char *log = mafft_ctx_log(ctx);
+	CHECK(log[0] != '\0', "null log_cb: log captured in context");
+	CHECK(strstr(log, "Done.") != NULL, "null log_cb: ctx log contains 'Done.'");
+
+	if (out) mafft_output_free(out);
+	mafft_destroy(ctx);
+}
+
+static void test_ctx_log_null(void)
+{
+	const char *log = mafft_ctx_log(NULL);
+	CHECK(log != NULL && log[0] == '\0', "mafft_ctx_log(NULL) returns empty string");
+}
+
 /* ---- Concurrency test ---- */
 
 typedef struct {
@@ -525,6 +617,9 @@ int main(void)
 	test_seq_auto_detect();
 	test_parttree_vs_native();
 	test_protein_vs_native();
+	test_log_callback();
+	test_null_log_callback();
+	test_ctx_log_null();
 	test_concurrency();
 	test_custom_allocator();
 

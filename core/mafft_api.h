@@ -55,7 +55,7 @@ typedef struct {
 
 	int   (*progress_cb)(const char *stage, double frac, void *ud);
 	void   *progress_ud;
-	void  (*log_cb)(const char *msg, void *ud);  /* reserved: Phase 2 */
+	void  (*log_cb)(const char *msg, void *ud);
 	void   *log_ud;
 } mafft_config_t;
 
@@ -90,6 +90,12 @@ int  mafft_align(mafft_ctx_t *ctx,
 
 /* ---- Output cleanup ---- */
 void mafft_output_free(mafft_output_t *out);
+
+/* ---- Log access ---- */
+/* Returns captured log text from the most recent mafft_align() call on ctx.
+ * The pointer is valid until the next mafft_align() on the same context or
+ * until mafft_destroy().  Returns "" if no log was captured.  Do not free. */
+const char *mafft_ctx_log(const mafft_ctx_t *ctx);
 
 /* ---- Error reporting ---- */
 const char *mafft_strerror(int code);

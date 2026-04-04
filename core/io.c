@@ -459,7 +459,7 @@ void putlocalhom3( char *al1, char *al2, LocalHom *localhompt, int off1, int off
 				start1 = pos1; start2 = pos2;
 				st = 1;
 			}
-			score += (double)n_dis[(int)amino_n[(unsigned char)*pt1]][(int)amino_n[(unsigned char)*pt2]]; // - offset ¤Ï¤¤¤é¤Ê¤¤¤«¤â
+			score += (double)n_dis[(int)amino_n[(unsigned char)*pt1]][(int)amino_n[(unsigned char)*pt2]]; // - offset ï¿½Ï¤ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½
 //			fprintf( stderr, "%c-%c, score(0) = %f\n", *pt1, *pt2, score );
 		}
 		if( *pt1++ != '-' ) pos1++;
@@ -595,7 +595,7 @@ void putlocalhom_ext( char *al1, char *al2, LocalHom *localhompt, int off1, int 
 				start1 = pos1; start2 = pos2;
 				st = 1;
 			}
-			iscore += n_dis[(int)amino_n[(unsigned char)*pt1]][(int)amino_n[(unsigned char)*pt2]]; // - offset ¤Ï¤¤¤é¤Ê¤¤¤«¤â
+			iscore += n_dis[(int)amino_n[(unsigned char)*pt1]][(int)amino_n[(unsigned char)*pt2]]; // - offset ï¿½Ï¤ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½
 //			fprintf( stderr, "%c-%c, iscore(0) = %d\n", *pt1, *pt2, iscore );
 		}
 		if( *pt1++ != '-' ) pos1++;
@@ -782,7 +782,7 @@ void putlocalhom2( char *al1, char *al2, LocalHom *localhompt, int off1, int off
 				start1 = pos1; start2 = pos2;
 				st = 1;
 			}
-			iscore += n_dis[(int)amino_n[(unsigned char)*pt1]][(int)amino_n[(unsigned char)*pt2]]; // - offset ¤Ï¤¤¤é¤Ê¤¤¤«¤â
+			iscore += n_dis[(int)amino_n[(unsigned char)*pt1]][(int)amino_n[(unsigned char)*pt2]]; // - offset ï¿½Ï¤ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½
 //			fprintf( stderr, "%c-%c, iscore(0) = %d\n", *pt1, *pt2, iscore );
 		}
 		if( *pt1++ != '-' ) pos1++;
@@ -917,7 +917,7 @@ void putlocalhom( char *al1, char *al2, LocalHom *localhompt, int off1, int off2
 				start1 = pos1; start2 = pos2;
 				st = 1;
 			}
-			score += (double)n_dis[(int)amino_n[(unsigned char)*pt1]][(int)amino_n[(unsigned char)*pt2]]; // - offset ¤Ï¤¤¤é¤Ê¤¤¤«¤â
+			score += (double)n_dis[(int)amino_n[(unsigned char)*pt1]][(int)amino_n[(unsigned char)*pt2]]; // - offset ï¿½Ï¤ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½
 //			fprintf( stderr, "%c-%c, score(0) = %f\n", *pt1, *pt2, score );
 		}
 		if( *pt1++ != '-' ) pos1++;
@@ -1055,7 +1055,7 @@ char    s[] ; int l ; FILE *fp ;
 		return( !noteofflag );
 }
 
-int myfgets(s, l, fp)  /* l°Ê¾å¤Ï¡¢¹ÔËö¤Þ¤ÇÆÉ¤ßÈô¤Ð¤¹ */
+int myfgets(s, l, fp)  /* lï¿½Ê¾ï¿½Ï¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¤ï¿½ï¿½É¤ï¿½ï¿½ï¿½ï¿½Ð¤ï¿½ */
 char    s[] ; int l ; FILE *fp ;
 {
         int     c = 0, i = 0 ;
@@ -1374,7 +1374,7 @@ char *load1SeqWithoutName_realloc_casepreserve( FILE *fpp )
 	while( ( c = getc( fpp ) ) != EOF &&           
           !( ( c == '>' || c == EOF ) && b == '\n' ) )
 	{
-		*cbuf++ = (char)c;  /* Ä¹¤¹¤®¤Æ¤â¤·¤é¤Ê¤¤ */
+		*cbuf++ = (char)c;  /* Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤â¤·ï¿½ï¿½Ê¤ï¿½ */
 		if( cbuf - val == size )
 		{
 			size += N;
@@ -1412,7 +1412,7 @@ char *load1SeqWithoutName_realloc( FILE *fpp )
 	while( ( c = getc( fpp ) ) != EOF &&           
           !( ( c == '>' || c == EOF ) && b == '\n' ) )
 	{
-		*cbuf++ = (char)c;  /* Ä¹¤¹¤®¤Æ¤â¤·¤é¤Ê¤¤ */
+		*cbuf++ = (char)c;  /* Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤â¤·ï¿½ï¿½Ê¤ï¿½ */
 		if( cbuf - val == size )
 		{
 			size += N;
@@ -1455,7 +1455,7 @@ int load1SeqWithoutName_new( FILE *fpp, char *cbuf )
 	while( ( c = getc( fpp ) ) != EOF &&                    /* by T. Nishiyama */
           !( ( c == '>' || c == EOF ) && b == '\n' ) )
 	{
-		*cbuf++ = (char)c;  /* Ä¹¤¹¤®¤Æ¤â¤·¤é¤Ê¤¤ */
+		*cbuf++ = (char)c;  /* Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤â¤·ï¿½ï¿½Ê¤ï¿½ */
 		b = c;
 	}
 	ungetc( c, fpp );
@@ -4145,7 +4145,7 @@ int writePre( int nseq, char **name, int nlen[M], char **aseq, int force )
 #endif
 		if( signalSM[SEMAPHORE]-- > 0 )
 		{
-#if 0 /* /tmp/pre ¤Î´Ø·¸¤Ç¤Ï¤º¤·¤¿ */
+#if 0 /* /tmp/pre ï¿½Î´Ø·ï¿½ï¿½Ç¤Ï¤ï¿½ï¿½ï¿½ï¿½ï¿½ */
 			if( ferror( prep_g ) ) prep_g = fopen( "pre", "w" );
 			if( !prep_g ) ErrorExit( "Cannot re-open pre." ); 
 #endif
@@ -5345,12 +5345,12 @@ void clustalout_pointer( FILE *fp, int nseq, int maxlen, char **seq, char **name
 		for( j=0; j<nseq; j++ )
 		{
 			fprintf( fp, "%-*.*s ", namelen, namelen, extractfirstword( name[order[j]]+1 ) );
-			fprintf( fp, "%.60s\n", seq[order[j]]+pos ); // Ä¹¤µ¤¬°ã¤¦¤È¤À¤á¡£
+			fprintf( fp, "%.60s\n", seq[order[j]]+pos ); // Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½ã¤¦ï¿½È¤ï¿½ï¿½á¡£
 		}
 		if( mark )
 		{
 			fprintf( fp, "%-*.*s ", namelen, namelen, "" );
-			fprintf( fp, "%.60s\n", mark + pos ); // Ä¹¤µ¤¬°ã¤¦¤È¤À¤á¡£
+			fprintf( fp, "%.60s\n", mark + pos ); // Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½ã¤¦ï¿½È¤ï¿½ï¿½á¡£
 		}
 		pos += 60;
 	}
@@ -5953,12 +5953,10 @@ double myatof( char *in )
 
 void reporterr( const char *str, ... )
 {
-//	static int loglen = 0;
 	va_list args;
 
 	if( gmsg )
 	{
-# if 1  // ato de sakujo
 		static FILE *errtmpfp = NULL;
 		if( errtmpfp == NULL )
 			errtmpfp = fopen( "maffterr", "w" );
@@ -5968,36 +5966,12 @@ void reporterr( const char *str, ... )
 		vfprintf( errtmpfp, str, args );
 		va_end( args );
 		fclose( errtmpfp );
-#endif
-
-#if 0
-		char *tmpptr;
-		tmpptr = (char *)realloc( *gmsg, (loglen+10000) * sizeof( char ) );
-		if( tmpptr == NULL )
-		{
-			fprintf( stderr, "Cannot relloc *gmsg\n" );
-			exit( 1 );
-		}
-		*gmsg = tmpptr;
-		va_start( args, str );
-		loglen += vsprintf( *gmsg + loglen, str, args );
-		va_end( args );
-
-
-		va_start( args, str );
-		loglen += vsprintf( *gmsg + loglen, str, args );
-		va_end( args );
-		*(*gmsg + loglen) = 0;
-		if( loglen > gmsglen - 100 ) loglen = 0; // tekitou
-#endif
-
 	}
 	else
 	{
 		va_start( args, str );
 		vfprintf( stderr, str, args );
 		va_end( args );
-//		fflush( stderr ); // iru?
 	}
 	return;
 }

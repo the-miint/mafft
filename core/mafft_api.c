@@ -416,7 +416,7 @@ int mafft_align(mafft_ctx_t *ctx,
 	rc = splittbfast_library( n_seqs, (int)lgui, work_names, work_seqs,
 	                          internal_argc, internal_argv, NULL );
 
-	/* Capture log from the internal buffer */
+	/* Capture log from the internal buffer and deliver to callback */
 	{
 		const char *log = mafft_get_log();
 		free( ctx->log_buf );
@@ -426,6 +426,31 @@ int mafft_align(mafft_ctx_t *ctx,
 			ctx->log_buf = (char *)malloc( ctx->log_len + 1 );
 			if( ctx->log_buf )
 				memcpy( ctx->log_buf, log, ctx->log_len + 1 );
+
+			/* Deliver to log callback line-by-line */
+			if( ctx->config.log_cb && ctx->log_buf )
+			{
+				char *p = ctx->log_buf;
+				char *end;
+				while( *p )
+				{
+					end = strchr( p, '\n' );
+					if( end )
+					{
+						*end = '\0';
+						if( *p ) /* skip empty lines */
+							ctx->config.log_cb( p, ctx->config.log_ud );
+						*end = '\n';
+						p = end + 1;
+					}
+					else
+					{
+						if( *p )
+							ctx->config.log_cb( p, ctx->config.log_ud );
+						break;
+					}
+				}
+			}
 		}
 		else
 		{
@@ -507,6 +532,12 @@ void mafft_output_free(mafft_output_t *out)
 		hidden->free_fn( out->_base, hidden->alloc_ud );
 	else
 		free( out->_base );
+}
+
+const char *mafft_ctx_log(const mafft_ctx_t *ctx)
+{
+	if( !ctx || !ctx->log_buf ) return "";
+	return ctx->log_buf;
 }
 
 const char *mafft_strerror(int code)
