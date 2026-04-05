@@ -371,6 +371,7 @@ extern double specificityconsideration;
 extern int ndistclass, maxdistclass;
 
 extern int gmsg;
+extern int mafft_library_mode;
 
 extern double sueff_global;
 extern double lenfaca, lenfacb, lenfacc, lenfacd;

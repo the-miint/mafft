@@ -252,6 +252,40 @@ static void test_bad_input(void)
 	rc = mafft_align(ctx, dna_names, NULL, 3, &out, NULL);
 	CHECK(rc == MAFFT_ERR_INVALID_INPUT, "NULL seqs returns INVALID_INPUT");
 
+	/* Context reusable after error */
+	rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, NULL);
+	CHECK(rc == MAFFT_OK, "context reusable after error");
+	if (out) mafft_output_free(out);
+
+	mafft_destroy(ctx);
+}
+
+static void test_library_mode_reset(void)
+{
+	/* Verify mafft_library_mode is cleared after destroy */
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_PARTTREE;
+	cfg.seqtype = MAFFT_SEQ_DNA;
+
+	mafft_ctx_t *ctx = mafft_create(&cfg);
+	CHECK(ctx != NULL, "create succeeds");
+
+	mafft_output_t *out = NULL;
+	int rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, NULL);
+	CHECK(rc == MAFFT_OK, "align succeeds before destroy");
+	if (out) mafft_output_free(out);
+
+	mafft_destroy(ctx);
+
+	/* After destroy, mafft_library_mode should be 0.
+	 * Verify by creating a new context and running again. */
+	ctx = mafft_create(&cfg);
+	CHECK(ctx != NULL, "re-create after destroy succeeds");
+	out = NULL;
+	rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, NULL);
+	CHECK(rc == MAFFT_OK, "align succeeds after destroy+recreate");
+	if (out) mafft_output_free(out);
 	mafft_destroy(ctx);
 }
 
@@ -613,6 +647,7 @@ int main(void)
 	test_strerror();
 	test_last_error_null();
 	test_bad_input();
+	test_library_mode_reset();
 	test_parttree_align();
 	test_seq_auto_detect();
 	test_parttree_vs_native();

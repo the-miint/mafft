@@ -125,6 +125,7 @@ int ndistclass = 10;
 int maxdistclass = -1;
 
 int gmsg = 0;
+int mafft_library_mode = 0;
 
 double sueff_global = SUEFF;
 

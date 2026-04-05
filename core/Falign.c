@@ -144,7 +144,7 @@ static int segcmp( void *ptr1, void *ptr2 )
 	if( diff ) return( diff );
 
 	fprintf( stderr, "USE STABLE SORT !!\n" );
-	exit( 1 );
+	return -1;
 	return( 0 );
 #endif
 }
@@ -643,7 +643,7 @@ system( "/usr/bin/gnuplot list.plot" );
 		if( count0 > count )
 		{
 			fprintf( stderr, "REPEAT!? \n" ); 
-			if( fftRepeatStop ) exit( 1 );
+			if( fftRepeatStop ) return -1.0;
 		}
 #if KEIKA
 		else 
@@ -1327,7 +1327,7 @@ system( "less seqVec2 < /dev/tty > /dev/tty" );
 #else
 				fprintf( stderr, "REPEAT!? \n" ); 
 #endif
-				if( fftRepeatStop ) exit( 1 );
+				if( fftRepeatStop ) return -1.0;
 			}
 #if KEIKA
 			else fprintf( stderr, "done\n" );
@@ -1470,7 +1470,7 @@ system( "less seqVec2 < /dev/tty > /dev/tty" );
 		if( constraint )
 		{
 			fprintf( stderr, "Not supported\n" );
-			exit( 1 );
+			return -1.0;
 		}
 #if 0
 		fprintf( stderr, "i=%d, before alignment", i );
@@ -2244,7 +2244,7 @@ double Falign_givenanchors( ExtAnch *pairanch,
 #else
 					fprintf( stderr, "REPEAT!? \n" ); 
 #endif
-					if( fftRepeatStop ) exit( 1 );
+					if( fftRepeatStop ) return -1.0;
 				}
 #if KEIKA
 				else fprintf( stderr, "done\n" );
@@ -2567,7 +2567,7 @@ double Falign_givenanchors( ExtAnch *pairanch,
 		if( constraint )
 		{
 			fprintf( stderr, "Not supported\n" );
-			exit( 1 );
+			return -1.0;
 		}
 #if 0
 		fprintf( stderr, "i=%d, before alignment", i );
@@ -3320,7 +3320,7 @@ system( "less seqVec2 < /dev/tty > /dev/tty" );
 #else
 					fprintf( stderr, "REPEAT!? \n" ); 
 #endif
-					if( fftRepeatStop ) exit( 1 );
+					if( fftRepeatStop ) return -1.0;
 				}
 #if KEIKA
 				else fprintf( stderr, "done\n" );
@@ -3482,7 +3482,7 @@ system( "less seqVec2 < /dev/tty > /dev/tty" );
 		if( constraint )
 		{
 			fprintf( stderr, "Not supported\n" );
-			exit( 1 );
+			return -1.0;
 		}
 #if 0
 		fprintf( stderr, "i=%d, before alignment", i );

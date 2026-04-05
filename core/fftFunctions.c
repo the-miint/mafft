@@ -54,7 +54,7 @@ Fukusosuu **AllocateFukusosuuMtx( int l1, int l2 )
 	if( !value ) 
 	{
 		fprintf( stderr, "Cannot allocate %d x %d FukusosuuVecMtx\n", l1, l2 );
-		exit( 1 );
+		return NULL;
 	}
 	for( j=0; j<l1; j++ ) 
 	{
@@ -62,7 +62,7 @@ Fukusosuu **AllocateFukusosuuMtx( int l1, int l2 )
 		if( !value[j] )
 		{
 			fprintf( stderr, "Cannot allocate %d x %d FukusosuuVecMtx\n", l1, l2 );
-			exit( 1 );
+			return NULL;
 		}
 	}
 	value[l1] = NULL;
@@ -368,7 +368,7 @@ fprintf( stderr, "%d-%d length = %d\n", seg->start, seg->end, length );
 		value++;
 	}
 #if TMPTMPTMP
-	exit( 0 );
+	return -1;
 #endif
 //	fprintf( stderr, "returning %d\n", value );
 	return( value );

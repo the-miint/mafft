@@ -172,7 +172,7 @@ void scmx_calc( int icyc, char **aseq, double *effarr, double **scmx )
 void exitall( char arr[] )
 {
 	reporterr(       "%s\n", arr );
-	exit( 1 );
+	return;
 }
 
 void display( char **seq, int nseq )
@@ -1490,7 +1490,7 @@ static void loadtreeoneline( int *ar, double *len, FILE *fp )
 	{
 		reporterr(       "\n\nFormat error (1) in the tree?  It has to be a bifurcated and rooted tree.\n" );
 		reporterr(       "Please use newick2mafft.rb to generate a tree file from a newick tree.\n\n" );
-		exit( 1 );
+		return;
 	}
 
 
@@ -1499,7 +1499,7 @@ static void loadtreeoneline( int *ar, double *len, FILE *fp )
 	{
 		reporterr(       "\n\nFormat error (2) in the tree?  It has to be a bifurcated and rooted tree.\n" );
 		reporterr(       "Please use newick2mafft.rb to generate a tree file from a newick tree.\n\n" );
-		exit( 1 );
+		return;
 	}
 
 	ar[0]--;
@@ -1509,7 +1509,7 @@ static void loadtreeoneline( int *ar, double *len, FILE *fp )
 	{
 		reporterr(       "\n\nIncorrect guide tree\n" );
 		reporterr(       "Please use newick2mafft.rb to generate a tree file from a newick tree.\n\n" );
-		exit( 1 );
+		return;
 	}
 
 
@@ -1543,7 +1543,7 @@ void loadtop( int nseq, double **mtx, int ***topol, double **len, char **name, i
 	if( !fp )
 	{
 		reporterr(       "cannot open _guidetree\n" );
-		exit( 1 );
+		return;
 	}
 
 	if( !hist )
@@ -1585,7 +1585,7 @@ void loadtop( int nseq, double **mtx, int ***topol, double **len, char **name, i
 		if( tree[i] == NULL )
 		{
 			reporterr(       "Cannot allocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 	}
@@ -1638,7 +1638,7 @@ void loadtop( int nseq, double **mtx, int ***topol, double **len, char **name, i
 			reporterr(       "\n\nCheck the guide tree.\n" );
 			reporterr(       "im=%d, jm=%d\n", im+1, jm+1 );
 			reporterr(       "Please use newick2mafft.rb to generate a tree file from a newick tree.\n\n" );
-			exit( 1 );
+			return;
 		}
 
 #endif
@@ -1687,7 +1687,7 @@ void loadtop( int nseq, double **mtx, int ***topol, double **len, char **name, i
 		if( !intpt )
 		{
 			reporterr(       "Cannot reallocate topol\n" );
-			exit( 1 );
+			return;
 		}
 		if( prevnode == -1 )
 		{
@@ -1767,7 +1767,7 @@ void loadtop( int nseq, double **mtx, int ***topol, double **len, char **name, i
 		if( !treetmp )
 		{
 			reporterr(       "Cannot allocate treetmp\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( treetmp, "(%s:%7.5f,%s:%7.5f)", tree[im], len[k][0], tree[jm], len[k][1] );
 		free( tree[im] );
@@ -1777,7 +1777,7 @@ void loadtop( int nseq, double **mtx, int ***topol, double **len, char **name, i
 		if( tree[im] == NULL )
 		{
 			reporterr(       "Cannot reallocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		strcpy( tree[im], treetmp );
 
@@ -2103,7 +2103,7 @@ void createchain( int nseq, int ***topol, double **len, char **name, int *nlen, 
 			if( tree[i] == NULL )
 			{
 				reporterr(       "Cannot allocate tree!\n" );
-				exit( 1 );
+				return;
 			}
 			sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 			treelen += strlen( tree[i] ) + 20;
@@ -2247,7 +2247,7 @@ void createchain( int nseq, int ***topol, double **len, char **name, int *nlen, 
 			if( tt == NULL )
 			{
 				reporterr(       "Cannot allocate treetmp\n" );
-				exit( 1 );
+				return;
 			}
 			treetmp = tt;
 //			reporterr( "i=%d\n", i );
@@ -2262,7 +2262,7 @@ void createchain( int nseq, int ***topol, double **len, char **name, int *nlen, 
 			if( tree[jm] == NULL )
 			{
 				reporterr(       "Cannot reallocate tree!\n" );
-				exit( 1 );
+				return;
 			}
 			strcpy( tree[jm], treetmp );
 #endif
@@ -2286,7 +2286,7 @@ void createchain( int nseq, int ***topol, double **len, char **name, int *nlen, 
 	if( !fp )
 	{
 		reporterr(       "cannot open _guidetree\n" );
-		exit( 1 );
+		return;
 	}
 	for( i=0; i<nseq-1; i++ )
 		fprintf( fp, "%d %d %f %f\n", topol[i][0][0]+1, topol[i][1][0]+1, len[i][0], len[i][1] );
@@ -2345,7 +2345,7 @@ void createchain( int nseq, int ***topol, double **len, char **name, int *nlen, 
 			if( tree[i] == NULL )
 			{
 				reporterr(       "Cannot allocate tree!\n" );
-				exit( 1 );
+				return;
 			}
 			sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 			treelen += strlen( tree[i] ) + 20;
@@ -2425,7 +2425,7 @@ void createchain( int nseq, int ***topol, double **len, char **name, int *nlen, 
 			if( tt == NULL )
 			{
 				reporterr(       "Cannot allocate treetmp\n" );
-				exit( 1 );
+				return;
 			}
 			treetmp = tt;
 //			reporterr( "i=%d\n", i );
@@ -2440,7 +2440,7 @@ void createchain( int nseq, int ***topol, double **len, char **name, int *nlen, 
 			if( tree[jm] == NULL )
 			{
 				reporterr(       "Cannot reallocate tree!\n" );
-				exit( 1 );
+				return;
 			}
 			strcpy( tree[jm], treetmp );
 #endif
@@ -2462,7 +2462,7 @@ void createchain( int nseq, int ***topol, double **len, char **name, int *nlen, 
 	if( !fp )
 	{
 		reporterr(       "cannot open _guidetree\n" );
-		exit( 1 );
+		return;
 	}
 #if CANONICALTREEFORMAT
 	for( i=0; i<nseq-1; i++ )
@@ -2514,7 +2514,7 @@ void loadtree( int nseq, int ***topol, double **len, char **name, int *nlen, Tre
 	if( !fp )
 	{
 		reporterr(       "cannot open _guidetree\n" );
-		exit( 1 );
+		return;
 	}
 
 
@@ -2562,7 +2562,7 @@ void loadtree( int nseq, int ***topol, double **len, char **name, int *nlen, Tre
 			if( tree[i] == NULL )
 			{
 				reporterr(       "Cannot allocate tree!\n" );
-				exit( 1 );
+				return;
 			}
 			sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 		}
@@ -2617,14 +2617,14 @@ void loadtree( int nseq, int ***topol, double **len, char **name, int *nlen, Tre
 			reporterr(       "\n\nCheck the guide tree.\n" );
 			reporterr(       "im=%d, jm=%d\n", im+1, jm+1 );
 			reporterr(       "Please use newick2mafft.rb to generate a tree file from a newick tree.\n\n" );
-			exit( 1 );
+			return;
 		}
 
 
 		if( len[k][0] == -1.0 || len[k][1] == -1.0 )
 		{
 			reporterr(       "\n\nERROR: Branch length is not given.\n" );
-			exit( 1 );
+			return;
 		}
 
 		if( len[k][0] < 0.0 ) len[k][0] = 0.0;
@@ -2677,7 +2677,7 @@ void loadtree( int nseq, int ***topol, double **len, char **name, int *nlen, Tre
 		if( !intpt )
 		{
 			reporterr(       "Cannot reallocate topol\n" );
-			exit( 1 );
+			return;
 		}
 		if( prevnode == -1 )
 		{
@@ -2752,7 +2752,7 @@ void loadtree( int nseq, int ***topol, double **len, char **name, int *nlen, Tre
 			if( !treetmp )
 			{
 				reporterr(       "Cannot allocate treetmp\n" );
-				exit( 1 );
+				return;
 			}
 			sprintf( treetmp, "(%s:%7.5f,%s:%7.5f)", tree[im], len[k][0], tree[jm], len[k][1] );
 			free( tree[im] );
@@ -2762,7 +2762,7 @@ void loadtree( int nseq, int ***topol, double **len, char **name, int *nlen, Tre
 			if( tree[im] == NULL )
 			{
 				reporterr(       "Cannot reallocate tree!\n" );
-				exit( 1 );
+				return;
 			}
 			strcpy( tree[im], treetmp );
 		}
@@ -2844,7 +2844,7 @@ int check_guidetreefile( int *seed, int *npick, double *limitram )
 	if( !fp )
 	{
 		reporterr(       "cannot open _guidetree\n" );
-		exit( 1 );
+		return -1;
 	}
 
 	fgets( string, 999, fp );
@@ -2868,7 +2868,7 @@ int check_guidetreefile( int *seed, int *npick, double *limitram )
 		if( *npick < 2 )
 		{
 			reporterr( "Check npick\n" );
-			exit( 1 );
+			return -1;
 		}
 		return( 'a' );
 	}
@@ -2879,7 +2879,7 @@ int check_guidetreefile( int *seed, int *npick, double *limitram )
 		if( *npick < 2 )
 		{
 			reporterr( "Check npick\n" );
-			exit( 1 );
+			return -1;
 		}
 		return( 't' );
 	}
@@ -2894,7 +2894,7 @@ int check_guidetreefile( int *seed, int *npick, double *limitram )
 		else
 		{
 			reporterr( "\nSpecify initial ram usage by '--initialramusage xGB'\n\n\n" );
-			exit( 1 );
+			return -1;
 		}
 		sscanf( sizestring, "%lf", &tmpd );
 		*limitram = tmpd * tanni;
@@ -3133,7 +3133,7 @@ void fixed_supg_double_realloc_nobk_halfmtx_treeout_constrained( int nseq, doubl
 	else
 	{
 		reporterr(       "Unknown treemethod, %c\n", treemethod );
-		exit( 1 );
+		return;
 	}
 
 	if( !hist )
@@ -3184,7 +3184,7 @@ void fixed_supg_double_realloc_nobk_halfmtx_treeout_constrained( int nseq, doubl
 		if( tree[i] == NULL )
 		{
 			reporterr(       "Cannot allocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 	}
@@ -3284,7 +3284,7 @@ void fixed_supg_double_realloc_nobk_halfmtx_treeout_constrained( int nseq, doubl
 			if( allinconsistent )
 			{
 				reporterr(       "\n\n\nPlease check whether the grouping is possible.\n\n\n" );
-				exit( 1 );
+				return;
 			}
 #if 1
 			intpt = testtopol;
@@ -3396,7 +3396,7 @@ void fixed_supg_double_realloc_nobk_halfmtx_treeout_constrained( int nseq, doubl
 		if( !intpt )
 		{
 			reporterr(       "Cannot reallocate topol\n" );
-			exit( 1 );
+			return;
 		}
 		if( prevnode == -1 )
 		{
@@ -3499,7 +3499,7 @@ void fixed_supg_double_realloc_nobk_halfmtx_treeout_constrained( int nseq, doubl
 		if( !treetmp )
 		{
 			reporterr(       "Cannot allocate treetmp\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( treetmp, "(%s:%7.5f,%s:%7.5f)", tree[im], len[k][0], tree[jm], len[k][1] );
 		free( tree[im] );
@@ -3509,7 +3509,7 @@ void fixed_supg_double_realloc_nobk_halfmtx_treeout_constrained( int nseq, doubl
 		if( tree[im] == NULL )
 		{
 			reporterr(       "Cannot reallocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		strcpy( tree[im], treetmp );
 
@@ -4290,7 +4290,7 @@ static void reformattree( Treept *root, Treept *ori, int n, int ***topol, double
 			if( tree[i] == NULL )
 			{
 				reporterr(       "Cannot allocate tree!\n" );
-				exit( 1 );
+				return;
 			}
 			sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 
@@ -4313,7 +4313,7 @@ static void reformattree( Treept *root, Treept *ori, int n, int ***topol, double
 	if( lastappear == NULL )
 	{
 		reporterr( "Cannot allocate lastappear\n" );
-		exit( 1 );
+		return;
 	}
 	for( i=0; i<n; i++ ) lastappear[i] = -1;
 	pos = 0;
@@ -4441,17 +4441,17 @@ static void writehat3node_noaddress( int n, int i, int j, int ii, int jj, FILE *
 #endif
 			{
 				reporterr( "write error, n=%d\n", n );
-				exit( 1 );
+				return;
 			}
 			for( tmpptr=lh; tmpptr; tmpptr=tmpptr->next )
 			{
 				len = tmpptr->end1-tmpptr->start1;
-				if( fwrite( &(tmpptr->start1), sizeof( int ), 1, *fpp ) != 1  || 
-				    fwrite( &(tmpptr->start2), sizeof( int ), 1, *fpp ) != 1  || 
+				if( fwrite( &(tmpptr->start1), sizeof( int ), 1, *fpp ) != 1  ||
+				    fwrite( &(tmpptr->start2), sizeof( int ), 1, *fpp ) != 1  ||
 				    fwrite( &len, sizeof( int ), 1, *fpp ) != 1 )
 				{
 					reporterr( "write error, n=%d\n", n );
-					exit( 1 );
+					return;
 				}
 //				reporterr( "reg1:%d-%d, reg2:%d-%d, len=%d, score=%f\n", tmpptr->start1, tmpptr->start1+len, tmpptr->start2, tmpptr->start2+len, len, opt );
 			}
@@ -4639,7 +4639,7 @@ static void *recalcpairs4thread( void *arg )// no TLS
 	else
 	{
 		reporterr( "alg %c is not yet supported\n", alg );
-		exit( 1 );
+		return NULL;
 	}
 #if EXACTLYSAMEASPAIRLOCALALIGN
 	double tmpdist;
@@ -4765,7 +4765,7 @@ static void *recalcpairs4thread( void *arg )// no TLS
 		if( !localfp )
 		{
 			reporterr( "Canoot open %s\n", fn );
-			exit( 1 );
+			return NULL;
 		}
 		free( fn );
 		setvbuf( localfp, NULL, _IOFBF, MYBUFSIZE );
@@ -4953,7 +4953,7 @@ static void recalcpairs_para4( int njob, int ***topol, Treedep *dep, char **bseq
 		if( addprofile )
 		{
 			reporterr( "--addprofile is not yet supported\n" );
-			exit( 1 );
+			return;
 		}
 	}
 	else
@@ -5309,7 +5309,7 @@ void compacttreegivendist( int njob, double *mindists, int *neighbors, int ***to
 			else
 			{
 				reporterr( "okashii\n" );
-				exit( 1 );
+				return;
 			}
 	
 			treept[i].parent = treept+n;
@@ -5437,7 +5437,7 @@ void compacttreedpdist( int njob, char **bseq, char **dseq, double *selfscore, i
 			else
 			{
 				reporterr( "okashii\n" );
-				exit( 1 );
+				return;
 			}
 	
 			treept[i].parent = treept+n;
@@ -5531,7 +5531,7 @@ void compacttree_memsaveselectable( int nseq, double **partmtx, int *nearest, do
 	else
 	{
 		reporterr(       "Unknown treemethod, %c\n", treemethod );
-		exit( 1 );
+		return;
 	}
 
 	if( howcompact == 2 )
@@ -5611,7 +5611,7 @@ void compacttree_memsaveselectable( int nseq, double **partmtx, int *nearest, do
 			if( tree[i] == NULL )
 			{
 				reporterr(       "Cannot allocate tree!\n" );
-				exit( 1 );
+				return;
 			}
 			sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 		}
@@ -5702,7 +5702,7 @@ void compacttree_memsaveselectable( int nseq, double **partmtx, int *nearest, do
 			else
 			{
 				reporterr( "This version supports memsave=1 only\n" ); // fukkatsu saseru tokiha pt22 wo dainyu.
-				exit( 1 );
+				return;
 				for( intpt2=pt11; *intpt2!=-1; )
 					*intpt++ = *intpt2++;
 				for( intpt2=pt22; *intpt2!=-1; )
@@ -5721,7 +5721,7 @@ void compacttree_memsaveselectable( int nseq, double **partmtx, int *nearest, do
 		if( !intpt )
 		{
 			reporterr(       "Cannot reallocate topol\n" );
-			exit( 1 );
+			return;
 		}
 		if( prevnode == -1 )
 		{
@@ -5750,7 +5750,7 @@ void compacttree_memsaveselectable( int nseq, double **partmtx, int *nearest, do
 			else
 			{
 				reporterr( "This version supports memsave=1 only\n" ); // fukkatsu saseru tokiha pt22 wo dainyu.
-				exit( 1 );
+				return;
 				for( intpt2=pt11; *intpt2!=-1; )
 					*intpt++ = *intpt2++;
 				for( intpt2=pt22; *intpt2!=-1; )
@@ -5965,7 +5965,7 @@ void compacttree_memsaveselectable( int nseq, double **partmtx, int *nearest, do
 			if( !treetmp )
 			{
 				reporterr(       "Cannot allocate treetmp\n" );
-				exit( 1 );
+				return;
 			}
 			sprintf( treetmp, "(%s:%7.5f,%s:%7.5f)", tree[im], len[k][0], tree[jm], len[k][1] );
 			free( tree[im] );
@@ -5975,7 +5975,7 @@ void compacttree_memsaveselectable( int nseq, double **partmtx, int *nearest, do
 			if( tree[im] == NULL )
 			{
 				reporterr(       "Cannot reallocate tree!\n" );
-				exit( 1 );
+				return;
 			}
 			strcpy( tree[im], treetmp );
 		}
@@ -6167,7 +6167,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout_memsave( int nseq, dou
 	else
 	{
 		reporterr(       "Unknown treemethod, %c\n", treemethod );
-		exit( 1 );
+		return;
 	}
 
 	if( !hist )
@@ -6213,7 +6213,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout_memsave( int nseq, dou
 		if( tree[i] == NULL )
 		{
 			reporterr(       "Cannot allocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 	}
@@ -6305,7 +6305,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout_memsave( int nseq, dou
 		if( !intpt )
 		{
 			reporterr(       "Cannot reallocate topol\n" );
-			exit( 1 );
+			return;
 		}
 		if( prevnode == -1 )
 		{
@@ -6432,7 +6432,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout_memsave( int nseq, dou
 		if( !treetmp )
 		{
 			reporterr(       "Cannot allocate treetmp\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( treetmp, "(%s:%7.5f,%s:%7.5f)", tree[im], len[k][0], tree[jm], len[k][1] );
 		free( tree[im] );
@@ -6442,7 +6442,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout_memsave( int nseq, dou
 		if( tree[im] == NULL )
 		{
 			reporterr(       "Cannot reallocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		strcpy( tree[im], treetmp );
 
@@ -6569,7 +6569,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout( int nseq, double **ef
 	else
 	{
 		reporterr(       "Unknown treemethod, %c\n", treemethod );
-		exit( 1 );
+		return;
 	}
 
 	if( !hist )
@@ -6614,7 +6614,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout( int nseq, double **ef
 		if( tree[i] == NULL )
 		{
 			reporterr(       "Cannot allocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 	}
@@ -6695,7 +6695,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout( int nseq, double **ef
 		if( !intpt )
 		{
 			reporterr(       "Cannot reallocate topol\n" );
-			exit( 1 );
+			return;
 		}
 		if( prevnode == -1 )
 		{
@@ -6795,7 +6795,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout( int nseq, double **ef
 		if( !treetmp )
 		{
 			reporterr(       "Cannot allocate treetmp\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( treetmp, "(%s:%7.5f,%s:%7.5f)", tree[im], len[k][0], tree[jm], len[k][1] );
 		free( tree[im] );
@@ -6805,7 +6805,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_treeout( int nseq, double **ef
 		if( tree[im] == NULL )
 		{
 			reporterr(       "Cannot reallocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		strcpy( tree[im], treetmp );
 
@@ -6908,7 +6908,7 @@ void fixed_musclesupg_double_treeout( int nseq, double **eff, int ***topol, doub
 	else
 	{
 		reporterr(       "Unknown treemethod, %c\n", treemethod );
-		exit( 1 );
+		return;
 	}
 
 
@@ -6996,7 +6996,7 @@ void fixed_musclesupg_double_treeout( int nseq, double **eff, int ***topol, doub
 		if( tree[i] == NULL )
 		{
 			reporterr(       "Cannot allocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 	}
@@ -7181,7 +7181,7 @@ void fixed_musclesupg_double_treeout( int nseq, double **eff, int ***topol, doub
 		if( !treetmp )
 		{
 			reporterr(       "Cannot allocate treetmp\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( treetmp, "(%s:%7.5f,%s:%7.5f)", tree[im], len[k][0], tree[jm], len[k][1] );
 		free( tree[im] );
@@ -7191,7 +7191,7 @@ void fixed_musclesupg_double_treeout( int nseq, double **eff, int ***topol, doub
 		if( tree[im] == NULL )
 		{
 			reporterr(       "Cannot reallocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		strcpy( tree[im], treetmp );
 #endif
@@ -7301,7 +7301,7 @@ void fixed_supg_double_treeout_constrained( int nseq, double **eff, int ***topol
 	else
 	{
 		reporterr(       "Unknown treemethod, %c\n", treemethod );
-		exit( 1 );
+		return;
 	}
 
 
@@ -7394,7 +7394,7 @@ void fixed_supg_double_treeout_constrained( int nseq, double **eff, int ***topol
 		if( tree[i] == NULL )
 		{
 			reporterr(       "Cannot allocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 	}
@@ -7505,7 +7505,7 @@ void fixed_supg_double_treeout_constrained( int nseq, double **eff, int ***topol
 			if( allinconsistent )
 			{
 				reporterr(       "\n\n\nPlease check whether the grouping is possible.\n\n\n" );
-				exit( 1 );
+				return;
 			}
 #if 1
 			intpt = testtopol;
@@ -7723,7 +7723,7 @@ void fixed_supg_double_treeout_constrained( int nseq, double **eff, int ***topol
 		if( !treetmp )
 		{
 			reporterr(       "Cannot allocate treetmp\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( treetmp, "(%s:%7.5f,%s:%7.5f)", tree[im], len[k][0], tree[jm], len[k][1] );
 		free( tree[im] );
@@ -7733,7 +7733,7 @@ void fixed_supg_double_treeout_constrained( int nseq, double **eff, int ***topol
 		if( tree[im] == NULL )
 		{
 			reporterr(       "Cannot reallocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		strcpy( tree[im], treetmp );
 #endif
@@ -7835,7 +7835,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_memsave( int nseq, double **ef
 	else
 	{
 		reporterr(       "Unknown treemethod, %c\n", treemethod );
-		exit( 1 );
+		return;
 	}
 
 	if( !hist )
@@ -7933,7 +7933,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx_memsave( int nseq, double **ef
 		if( !intpt )
 		{
 			reporterr(       "Cannot reallocate topol\n" );
-			exit( 1 );
+			return;
 		}
 		if( prevnode == -1 )
 		{
@@ -8114,7 +8114,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx( int nseq, double **eff, int *
 	else
 	{
 		reporterr(       "Unknown treemethod, %c\n", treemethod );
-		exit( 1 );
+		return;
 	}
 
 	if( !hist )
@@ -8205,7 +8205,7 @@ void fixed_musclesupg_double_realloc_nobk_halfmtx( int nseq, double **eff, int *
 		if( !intpt )
 		{
 			reporterr(       "Cannot reallocate topol\n" );
-			exit( 1 );
+			return;
 		}
 		if( prevnode == -1 )
 		{
@@ -8380,7 +8380,7 @@ void veryfastsupg_double_loadtree( int nseq, double **eff, int ***topol, double 
 	if( !fp )
 	{
 		reporterr(       "cannot open _guidetree\n" );
-		exit( 1 );
+		return;
 	}
 
 
@@ -8421,7 +8421,7 @@ void veryfastsupg_double_loadtree( int nseq, double **eff, int ***topol, double 
 		if( tree[i] == NULL )
 		{
 			reporterr(       "Cannot allocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( tree[i], "\n%d_%.900s\n", i+1, nameptr );
 	}
@@ -8467,7 +8467,7 @@ void veryfastsupg_double_loadtree( int nseq, double **eff, int ***topol, double 
 			reporterr(       "\n\nCheck the guide tree.\n" );
 			reporterr(       "im=%d, jm=%d\n", im+1, jm+1 );
 			reporterr(       "Please use newick2mafft.rb to generate a tree file from a newick tree.\n\n" );
-			exit( 1 );
+			return;
 		}
 
 
@@ -8477,7 +8477,7 @@ void veryfastsupg_double_loadtree( int nseq, double **eff, int ***topol, double 
 		if( lenfl[0] == -1.0 || lenfl[1] == -1.0 )
 		{
 			reporterr(       "\n\nWARNING: Branch length is not given.\n" );
-			exit( 1 );
+			return;
 		}
 
 		if( lenfl[0] < 0.0 ) lenfl[0] = 0.0;
@@ -8598,7 +8598,7 @@ void veryfastsupg_double_loadtree( int nseq, double **eff, int ***topol, double 
 		if( !treetmp )
 		{
 			reporterr(       "Cannot allocate treetmp\n" );
-			exit( 1 );
+			return;
 		}
 		sprintf( treetmp, "(%s:%7.5f,%s:%7.5f)", tree[im], len[k][0], tree[jm], len[k][1] );
 		free( tree[im] );
@@ -8608,7 +8608,7 @@ void veryfastsupg_double_loadtree( int nseq, double **eff, int ***topol, double 
 		if( tree[im] == NULL )
 		{
 			reporterr(       "Cannot reallocate tree!\n" );
-			exit( 1 );
+			return;
 		}
 		strcpy( tree[im], treetmp );
 
@@ -8871,7 +8871,7 @@ void veryfastsupg_double_outtree( int nseq, double **eff, int ***topol, double *
 	else
 	{
 		reporterr(       "Unknown treemethod, %c\n", treemethod );
-		exit( 1 );
+		return;
 	}
 
 	if( !hist )
@@ -9635,7 +9635,7 @@ void countnode( int nseq, int ***topol, double **node ) /* node[j][i] != node[i]
     if( nseq-2 < 0 )
 	{
 		reporterr(       "Too few sequence for countnode: nseq = %d\n", nseq );
-		exit( 1 );
+		return;
     }
 
     for( i=0; i<nseq; i++ ) rootnode[i] = 0;
@@ -13264,7 +13264,7 @@ void st_getGapPattern( Gappat **pat, int clus, char **seq, double *eff, int len 
 						{
 							reporterr(       "Cannot allocate gappattern!'n" );
 							reporterr(       "Use an approximate method, with the --mafft5 option.\n" );
-							exit( 1 );
+							return;
 						}
 						(*fpt)[k].freq = 0.0;
 						(*fpt)[k].len = gaplen;
@@ -13995,7 +13995,7 @@ int addonetip( int njobc, int ***topolc, double **lenc, double **iscorec, int **
 	if( !leaf2node )
 	{
 		reporterr(       "Cannot allocate leaf2node.\n" );
-		exit( 1 );
+		return -1;
 	}
 	additionaltopol[0] = norg;
 	additionaltopol[1] = -1;
@@ -15113,7 +15113,7 @@ void fillimp( double **impmtx, double *imp, int clus1, int clus2, int lgth1, int
 				{
 					if( *pt1 != '-' && *pt2 != '-' )
 					{
-// ½Å¤ß¤òÆó½Å¤Ë¤«¤±¤Ê¤¤¤è¤¦¤ËÃí°Õ¤·¤Æ²¼¤µ¤¤¡£
+// ï¿½Å¤ß¤ï¿½ï¿½ï¿½Å¤Ë¤ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½è¤¦ï¿½ï¿½ï¿½ï¿½ï¿½Õ¤ï¿½ï¿½Æ²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 //						impmtx[k1][k2] += tmpptr->wimportance * fastathreshold;
 //						impmtx[k1][k2] += tmpptr->importance * effij;
 //						impmtx[k1][k2] += tmpptr->fimportance * effij;
@@ -15223,7 +15223,7 @@ static void readlocalhomtable2_single_bin_noseek( FILE *fp, LocalHom *localhomta
 	if( c != '\n' )
 	{
 		reporterr( "\n\nError in binary hat3  \n" );
-		exit( 1 );
+		return;
 	}
 }
 
@@ -15408,7 +15408,7 @@ static void *readloopthread( void *arg )
 				if( fp == NULL )
 				{
 					reporterr( "Cannot open %s\n", fn );
-					exit( 1 );
+					return NULL;
 				}
 				free( fn );
 //				if( setvbuf( fp, stbuf, _IOFBF, MYBUFSIZE ) )
@@ -15611,7 +15611,7 @@ void fillimp_file( double **impmtx, double *imp, int clus1, int clus2, int lgth1
 							else // naihazu
 							{
 								reporterr( "okashii\n" );
-								exit( 1 );
+								return;
 							}
 //							fprintf( stderr, "k1=%d, k2=%d, impalloclen=%d\n", k1, k2, impalloclen );
 //							fprintf( stderr, "mark, %d (%c) - %d (%c) \n", k1, *pt1, k2, *pt2 );
@@ -15735,7 +15735,7 @@ void fillimp_file( double **impmtx, double *imp, int clus1, int clus2, int lgth1
 	if( npairs != 0 )
 	{
 		reporterr( "okashii. npairs = %d\n", npairs );
-		exit( 1 );
+		return;
 	}
 
 #if 0

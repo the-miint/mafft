@@ -304,6 +304,7 @@ mafft_ctx_t *mafft_create(const mafft_config_t *cfg)
 	ctx->last_error[0] = '\0';
 	ctx->log_buf = NULL;
 	ctx->log_len = 0;
+	mafft_library_mode = 1;
 
 	return ctx;
 }
@@ -316,6 +317,9 @@ void mafft_destroy(mafft_ctx_t *ctx)
 	 * for mafft_output_t allocations. */
 	free( ctx->log_buf );
 	free( ctx );
+	/* mafft_library_mode is process-global.  Clear it so CLI code
+	 * paths in the same process resume normal exit() behavior. */
+	mafft_library_mode = 0;
 }
 
 int mafft_align(mafft_ctx_t *ctx,

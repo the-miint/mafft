@@ -53,7 +53,7 @@ static void match_ribosum( double *match, double **cpmx1, double **cpmx2, int i1
 			scarr[l] += ribosumdis[k][l] * cpmx1[i1][k];
 		}
 	}
-#if 0 /* ¤³¤ì¤ò»È¤¦¤È¤­¤Ïdoublework¤Î¥¢¥í¥±¡¼¥È¤òµÕ¤Ë¤¹¤ë */
+#if 0 /* ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½ï¿½È¤ï¿½ï¿½ï¿½doubleworkï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½Õ¤Ë¤ï¿½ï¿½ï¿½ */
 	{
 		double *fpt, **fptpt, *fpt2;
 		int *ipt, **iptpt;
@@ -131,7 +131,7 @@ static void match_calc( double *match, double **cpmx1, double **cpmx2, int i1, i
 			scarr[l] += (n_dis[k][l]-RNAthr) * cpmx1[i1][k];
 		}
 	}
-#if 0 /* ¤³¤ì¤ò»È¤¦¤È¤­¤Ïdoublework¤Î¥¢¥í¥±¡¼¥È¤òµÕ¤Ë¤¹¤ë */
+#if 0 /* ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½ï¿½È¤ï¿½ï¿½ï¿½doubleworkï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½Õ¤Ë¤ï¿½ï¿½ï¿½ */
 	{
 		double *fpt, **fptpt, *fpt2;
 		int *ipt, **iptpt;
@@ -210,7 +210,7 @@ static void match_add( double *match, double **cpmx1, double **cpmx2, int i1, in
 			scarr[l] += n_dis[k][l] * cpmx1[i1][k];
 		}
 	}
-#if 0 /* ¤³¤ì¤ò»È¤¦¤È¤­¤Ïdoublework¤Î¥¢¥í¥±¡¼¥È¤òµÕ¤Ë¤¹¤ë */
+#if 0 /* ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½ï¿½È¤ï¿½ï¿½ï¿½doubleworkï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½Õ¤Ë¤ï¿½ï¿½ï¿½ */
 	{
 		double *fpt, **fptpt, *fpt2;
 		int *ipt, **iptpt;
@@ -2216,7 +2216,7 @@ double Lalignmm_hmout( char **seq1, char **seq2, double *eff1, double *eff2, int
 		{
 			fprintf( stderr, "i = %d / %d\n", i, icyc );
 			fprintf( stderr, "bug! hairetsu ga kowareta!\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 	for( j=0; j<jcyc; j++ )
@@ -2225,7 +2225,7 @@ double Lalignmm_hmout( char **seq1, char **seq2, double *eff1, double *eff2, int
 		{
 			fprintf( stderr, "j = %d / %d\n", j, jcyc );
 			fprintf( stderr, "bug! hairetsu ga kowareta!\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 
@@ -2344,7 +2344,7 @@ double Lalignmm_hmout( char **seq1, char **seq2, double *eff1, double *eff2, int
 		{
 			fprintf( stderr, "i = %d / %d\n", i, icyc );
 			fprintf( stderr, "hairetsu ga kowareta (end of MSalignmm) !\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 	for( j=0; j<jcyc; j++ )
@@ -2353,7 +2353,7 @@ double Lalignmm_hmout( char **seq1, char **seq2, double *eff1, double *eff2, int
 		{
 			fprintf( stderr, "j = %d / %d\n", j, jcyc );
 			fprintf( stderr, "hairetsu ga kowareta (end of MSalignmm) !\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 
@@ -2413,7 +2413,7 @@ double Lalign2m2m_hmout( char **seq1, char **seq2, char **seq1r, char **seq2r, c
 		{
 			fprintf( stderr, "i = %d / %d\n", i, icyc );
 			fprintf( stderr, "bug! hairetsu ga kowareta!\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 	for( j=0; j<jcyc; j++ )
@@ -2422,7 +2422,7 @@ double Lalign2m2m_hmout( char **seq1, char **seq2, char **seq1r, char **seq2r, c
 		{
 			fprintf( stderr, "j = %d / %d\n", j, jcyc );
 			fprintf( stderr, "bug! hairetsu ga kowareta!\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 
@@ -2546,7 +2546,7 @@ double Lalign2m2m_hmout( char **seq1, char **seq2, char **seq1r, char **seq2r, c
 		{
 			fprintf( stderr, "i = %d / %d\n", i, icyc );
 			fprintf( stderr, "hairetsu ga kowareta (end of MSalignmm) !\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 	for( j=0; j<jcyc; j++ )
@@ -2555,7 +2555,7 @@ double Lalign2m2m_hmout( char **seq1, char **seq2, char **seq1r, char **seq2r, c
 		{
 			fprintf( stderr, "j = %d / %d\n", j, jcyc );
 			fprintf( stderr, "hairetsu ga kowareta (end of MSalignmm) !\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 

@@ -112,7 +112,7 @@ static int segcmp( void *ptr1, void *ptr2 )
 	if( diff ) return( diff );
 
 	fprintf( stderr, "USE STABLE SORT !!\n" );
-	exit( 1 );
+	return -1;
 	return( 0 );
 #endif
 }
@@ -713,7 +713,7 @@ system( "less seqVec2 < /dev/tty > /dev/tty" );
 #else
 			fprintf( stderr, "REPEAT!? \n" ); 
 #endif
-			if( fftRepeatStop ) exit( 1 );
+			if( fftRepeatStop ) return -1.0;
 		}
 #if KEIKA
 		else fprintf( stderr, "done\n" );

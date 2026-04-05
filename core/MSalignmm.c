@@ -56,7 +56,7 @@ static void match_calc_add( double **scoringmtx, double *match, double **cpmx1, 
 			scarr[l] += scoringmtx[k][l] * cpmx1[i1][k];
 		}
 	}
-#if 0 /* ¤³¤ì¤ò»È¤¦¤È¤­¤Ïdoublework¤Î¥¢¥í¥±¡¼¥È¤òµÕ¤Ë¤¹¤ë */
+#if 0 /* ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½ï¿½È¤ï¿½ï¿½ï¿½doubleworkï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½Õ¤Ë¤ï¿½ï¿½ï¿½ */
 	{
 		double *fpt, **fptpt, *fpt2;
 		int *ipt, **iptpt;
@@ -137,7 +137,7 @@ static void match_calc( double **n_dynamicmtx, double *match, double **cpmx1, do
 			scarr[l] += n_dynamicmtx[k][l] * cpmx1[i1][k];
 		}
 	}
-#if 0 /* ¤³¤ì¤ò»È¤¦¤È¤­¤Ïdoublework¤Î¥¢¥í¥±¡¼¥È¤òµÕ¤Ë¤¹¤ë */
+#if 0 /* ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½ï¿½È¤ï¿½ï¿½ï¿½doubleworkï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½Õ¤Ë¤ï¿½ï¿½ï¿½ */
 	{
 		double *fpt, **fptpt, *fpt2;
 		int *ipt, **iptpt;
@@ -2033,14 +2033,14 @@ static double MSalignmm_rec( double **n_dynamicmtx, int icyc, int jcyc, double *
 	{
 		fprintf( stderr, "bug! hairetsu ga kowareta! (nglen1) seqlen(seq1[0])=%d but nglen1=%d\n", seqlen( seq1[0] ), nglen1 );
 		fprintf( stderr, "seq1[0] = %s\n", seq1[0] );
-		exit( 1 );
+		return -1.0;
 	}
 	else
 		fprintf( stderr, "nglen1 is ok in _rec\n" );
 	if( seqlen( seq2[0] ) != nglen2 )
 	{
 		fprintf( stderr, "bug! hairetsu ga kowareta! (nglen2) seqlen(seq2[0])=%d but nglen2=%d\n", seqlen( seq2[0] ), nglen2 );
-		exit( 1 );
+		return -1.0;
 	}
 	else
 		fprintf( stderr, "nglen2 is ok in _rec\n" );
@@ -2167,7 +2167,7 @@ double MSalignmm( double **n_dynamicmtx, char **seq1, char **seq2, double *eff1,
 		{
 			fprintf( stderr, "i = %d / %d\n", i, icyc );
 			fprintf( stderr, "bug! hairetsu ga kowareta!\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 	for( j=0; j<jcyc; j++ )
@@ -2176,7 +2176,7 @@ double MSalignmm( double **n_dynamicmtx, char **seq1, char **seq2, double *eff1,
 		{
 			fprintf( stderr, "j = %d / %d\n", j, jcyc );
 			fprintf( stderr, "bug! hairetsu ga kowareta!\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 
@@ -2188,7 +2188,7 @@ double MSalignmm( double **n_dynamicmtx, char **seq1, char **seq2, double *eff1,
 		if( sgap1 )
 		{
 			reporterr( "The combination of sgap1 and cpmxhit is not supported. See Salignmm.c\n" );
-			exit( 1 );
+			return -1.0;
 		}
 
 
@@ -2441,7 +2441,7 @@ double MSalignmm( double **n_dynamicmtx, char **seq1, char **seq2, double *eff1,
 			{
 				reporterr( "Warning: rounding error may be large.  totaleff1 = %50.40f\n", totaleff1 );
 				reporterr( "Warning: rounding error may be large.  totaleff2 = %50.40f\n", totaleff2 );
-				exit( 1 );
+				return -1.0;
 			}
 			totaleff1 = totaleff1 * orieff1 / (orieff1 + orieff2);
 			totaleff2 = totaleff2 * orieff2 / (orieff1 + orieff2);
@@ -2509,12 +2509,12 @@ double MSalignmm( double **n_dynamicmtx, char **seq1, char **seq2, double *eff1,
 	{
 		fprintf( stderr, "bug! hairetsu ga kowareta! (nglen1) seqlen(seq1[0])=%d but nglen1=%d\n", seqlen( seq1[0] ), nglen1 );
 		fprintf( stderr, "seq1[0] = %s\n", seq1[0] );
-		exit( 1 );
+		return -1.0;
 	}
 	if( seqlen( seq2[0] ) != nglen2 )
 	{
 		fprintf( stderr, "bug! hairetsu ga kowareta! (nglen2) seqlen(seq2[0])=%d but nglen2=%d\n", seqlen( seq2[0] ), nglen2 );
-		exit( 1 );
+		return -1.0;
 	}
 
 	freearrays( ogcp1, ogcp2, ogcp1o, ogcp2o, fgcp1, fgcp2, fgcp1o, fgcp2o, cpmx1, cpmx2, gapfreq1f, gapfreq2f, gapinfo, mseq1, mseq2, mgt1, mgt2 );
@@ -2527,7 +2527,7 @@ double MSalignmm( double **n_dynamicmtx, char **seq1, char **seq2, double *eff1,
 		{
 			fprintf( stderr, "i = %d / %d\n", i, icyc );
 			fprintf( stderr, "hairetsu ga kowareta (end of MSalignmm) !\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 	for( j=0; j<jcyc; j++ )
@@ -2536,7 +2536,7 @@ double MSalignmm( double **n_dynamicmtx, char **seq1, char **seq2, double *eff1,
 		{
 			fprintf( stderr, "j = %d / %d\n", j, jcyc );
 			fprintf( stderr, "hairetsu ga kowareta (end of MSalignmm) !\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 
@@ -3898,14 +3898,14 @@ static double MSalignmm_rec_variousdist( double ***matrices, int icyc, int jcyc,
 	{
 		fprintf( stderr, "bug! hairetsu ga kowareta! (nglen1) seqlen(seq1[0])=%d but nglen1=%d\n", seqlen( seq1[0] ), nglen1 );
 		fprintf( stderr, "seq1[0] = %s\n", seq1[0] );
-		exit( 1 );
+		return -1.0;
 	}
 	else
 		fprintf( stderr, "nglen1 is ok in _rec\n" );
 	if( seqlen( seq2[0] ) != nglen2 )
 	{
 		fprintf( stderr, "bug! hairetsu ga kowareta! (nglen2) seqlen(seq2[0])=%d but nglen2=%d\n", seqlen( seq2[0] ), nglen2 );
-		exit( 1 );
+		return -1.0;
 	}
 	else
 		fprintf( stderr, "nglen2 is ok in _rec\n" );
@@ -4011,7 +4011,7 @@ double MSalignmm_variousdist( double **pairoffset, double ***matrices, double **
 		{
 			fprintf( stderr, "i = %d / %d\n", i, icyc );
 			fprintf( stderr, "bug! hairetsu ga kowareta!\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 	for( j=0; j<jcyc; j++ )
@@ -4020,7 +4020,7 @@ double MSalignmm_variousdist( double **pairoffset, double ***matrices, double **
 		{
 			fprintf( stderr, "j = %d / %d\n", j, jcyc );
 			fprintf( stderr, "bug! hairetsu ga kowareta!\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 
@@ -4152,12 +4152,12 @@ double MSalignmm_variousdist( double **pairoffset, double ***matrices, double **
 	{
 		fprintf( stderr, "bug! hairetsu ga kowareta! (nglen1) seqlen(seq1[0])=%d but nglen1=%d\n", seqlen( seq1[0] ), nglen1 );
 		fprintf( stderr, "seq1[0] = %s\n", seq1[0] );
-		exit( 1 );
+		return -1.0;
 	}
 	if( seqlen( seq2[0] ) != nglen2 )
 	{
 		fprintf( stderr, "bug! hairetsu ga kowareta! (nglen2) seqlen(seq2[0])=%d but nglen2=%d\n", seqlen( seq2[0] ), nglen2 );
-		exit( 1 );
+		return -1.0;
 	}
 
 
@@ -4171,7 +4171,7 @@ double MSalignmm_variousdist( double **pairoffset, double ***matrices, double **
 		{
 			fprintf( stderr, "i = %d / %d\n", i, icyc );
 			fprintf( stderr, "hairetsu ga kowareta (end of MSalignmm) !\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 	for( j=0; j<jcyc; j++ )
@@ -4180,7 +4180,7 @@ double MSalignmm_variousdist( double **pairoffset, double ***matrices, double **
 		{
 			fprintf( stderr, "j = %d / %d\n", j, jcyc );
 			fprintf( stderr, "hairetsu ga kowareta (end of MSalignmm) !\n" );
-			exit( 1 );
+			return -1.0;
 		}
 	}
 

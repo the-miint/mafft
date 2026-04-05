@@ -190,11 +190,11 @@ static void getfastascoremtx( int **tmpaminodis )
 		if( res )
 		{
 			fprintf( stderr, "error in %s", fastapath );
-			exit( 1 );
+			if( mafft_library_mode ) return; else exit( 1 );
 		}
 
 		rfp = fopen( resultfile, "r" );
-		if( rfp == NULL )  
+		if( rfp == NULL )
 			ErrorExit( "file 'fasta.$$' does not exist\n" );
 		res = ReadFasta34m10_scoreonly( rfp, resvec, 1 );
 		fprintf( stderr, "%c: %f\n", 'A'+i, *resvec/6 );
@@ -203,7 +203,7 @@ static void getfastascoremtx( int **tmpaminodis )
 		{
 			fprintf( stderr, "Error in blast, *resvec=%f\n", *resvec );
 			fprintf( stderr, "Error in blast, *resvec/6=%f\n", *resvec/6 );
-			exit( 1 );
+			if( mafft_library_mode ) return; else exit( 1 );
 		}
 		tmpaminodis[(int)aa][(int)aa] = (int)( *resvec / 6 );
 //		fprintf( stderr, "*resvec=%f, tmpaminodis[aa][aa] = %d\n", *resvec, tmpaminodis[aa][aa] );
@@ -295,11 +295,11 @@ static void getblastscoremtx( int **tmpaminodis )
 		if( res )
 		{
 			fprintf( stderr, "error in %s", "blastall" );
-			exit( 1 );
+			if( mafft_library_mode ) return; else exit( 1 );
 		}
 
 		rfp = fopen( resultfile, "r" );
-		if( rfp == NULL )  
+		if( rfp == NULL )
 			ErrorExit( "file 'fasta.$$' does not exist\n" );
 		res = ReadBlastm7_scoreonly( rfp, resvec, 1 );
 		fprintf( stdout, "%c: %f\n", 'A'+i, *resvec/6 );
@@ -308,7 +308,7 @@ static void getblastscoremtx( int **tmpaminodis )
 		{
 			fprintf( stderr, "Error in blast, *resvec=%f\n", *resvec );
 			fprintf( stderr, "Error in blast, *resvec/6=%f\n", *resvec/6 );
-			exit( 1 );
+			if( mafft_library_mode ) return; else exit( 1 );
 		}
 		tmpaminodis[aa][aa] = (int)( *resvec / 6 );
 	}
@@ -400,7 +400,7 @@ static double *callfasta( char **seq, Scores *scores, int nin, int *picks, int q
 	if( res )
 	{
 		fprintf( stderr, "error in %s", fastapath );
-		exit( 1 );
+		if( mafft_library_mode ) return NULL; else exit( 1 );
 	}
 //	fprintf( stderr, "fasta done\n" );
 
@@ -809,20 +809,20 @@ void arguments( int argc, char *argv[] )
         cut = atof( (*argv) );
         argc--;
     }
-    if( argc != 0 ) 
+    if( argc != 0 )
     {
         fprintf( stderr, "options: Check source file !\n" );
-        exit( 1 );
+        if( mafft_library_mode ) return; else exit( 1 );
     }
 	if( tbitr == 1 && outgap == 0 )
 	{
 		fprintf( stderr, "conflicting options : o, m or u\n" );
-		exit( 1 );
+		if( mafft_library_mode ) return; else exit( 1 );
 	}
 	if( alg == 'C' && outgap == 0 )
 	{
 		fprintf( stderr, "conflicting options : C, o\n" );
-		exit( 1 );
+		if( mafft_library_mode ) return; else exit( 1 );
 	}
 }
 
@@ -2162,7 +2162,7 @@ exit( 1 );
 		if( npick != 1 )
 		{
 			fprintf( stderr, "okashii, nyuko = 1, shikashi npick = %d\n", npick );
-			exit( 1 );
+			if( mafft_library_mode ) return -1; else exit( 1 );
 		}
 //		fprintf( stderr, "### itchi suru hazu, nazenara scores[nin-1].score=%f, selfscores=%d,%d\n", scores[nin-1].score, scores[nin-1].selfscore, scores->selfscore );
 //		fprintf( stderr, "seq[%d] = scores->seq = \n%s\n", scores->numinseq, seq[scores->numinseq] );
@@ -2440,7 +2440,7 @@ exit( 1 );
 			fprintf( stderr, "i=%d/%d, ERROR!\n", i, nyuko );
 			for( j=0; j<nyuko; j++ )
 				fprintf( stderr, "numin[%d] = %d (rep=%d inori)\n", j, numin[j], y_o_map[j] );
-			exit( 1 );
+			if( mafft_library_mode ) return -1; else exit( 1 );
 		}
 	}
 

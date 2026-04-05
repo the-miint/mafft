@@ -472,7 +472,7 @@ void constants( int nseq, char **seq )
                	reporterr(       "\n" );
            	}
            	reporterr(       "\n" );
-					exit( 1 );
+					return;
         }
 
 		for( i=0; i<26; i++ ) amino[i] = locaminon[i];
@@ -717,7 +717,7 @@ void constants( int nseq, char **seq )
 		if( average < 0.0 )
 		{
 			reporterr( "\nUnrealistic scoring matrix.  Give larger positive values to matches (A/A, B/B, etc).\n\n" );
-			exit( 1 );
+			return;
 		}
 
 		for( i=0; i<nalphabets; i++ ) for( j=0; j<nalphabets; j++ ) 
@@ -748,7 +748,7 @@ void constants( int nseq, char **seq )
 		}
 #endif
 #if 0
-/* Ãí°Õ ¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª */
+/* ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 			penalty -= offset;
 #endif
 
@@ -783,8 +783,8 @@ void constants( int nseq, char **seq )
 			fprintf( stdout, "itch average = %f\n", average );
 			reporterr(       "parameters: %d, %d, %d\n", penalty, penalty_ex, offset );
 
-			
-  			exit( 1 );
+
+  			return;
         }
 
 		for( i=0; i<nalphabets; i++ ) for( j=0; j<nalphabets; j++ ) n_dis[i][j] = 0;
@@ -813,7 +813,7 @@ void constants( int nseq, char **seq )
 		if( nblosum == 0 )
 		{
 			reporterr( "nblosum=%d??\n", nblosum );
-			exit( 1 );
+			return;
 		}
 //		if( nblosum < 0 )
 //		{
@@ -965,7 +965,7 @@ void constants( int nseq, char **seq )
 		}
 #endif
 #if 0
-/* Ãí°Õ ¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª */
+/* ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 			penalty -= offset;
 #endif
 
@@ -998,8 +998,8 @@ void constants( int nseq, char **seq )
 			fprintf( stderr, "itch average = %f, E=%f\n", iaverage, average/iaverage );
 			reporterr(       "parameters: %d, %d, %d\n", penalty, penalty_ex, offset );
 
-			
-  			exit( 1 );
+
+  			return;
         }
 
 		for( i=0; i<26; i++ ) for( j=0; j<26; j++ ) n_dis[i][j] = 0;
@@ -1015,7 +1015,7 @@ void constants( int nseq, char **seq )
 	else if( dorp == 'p' && scoremtx == 2 ) /* Miyata-Yasunaga */
 	{
 		reporterr(       "Not supported\n" );
-		exit( 1 );
+		return;
 	}
 	else         /* JTT */
 	{
@@ -1057,7 +1057,7 @@ void constants( int nseq, char **seq )
 		if( pamN == 0 )
 		{
 			reporterr( "pamN=%d??\n", pamN );
-			exit( 1 );
+			return;
 		}
 		if( pamN < 0 )
 		{
@@ -1276,7 +1276,7 @@ void constants( int nseq, char **seq )
 		}
 #endif
 #if 0
-/* Ãí°Õ ¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª */
+/* ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 			penalty -= offset;
 #endif
 
@@ -1322,8 +1322,8 @@ void constants( int nseq, char **seq )
 			fprintf( stdout, "itch average = %f, E=%f\n", average, average/iaverage );
 			reporterr(       "parameters: %d, %d, %d\n", penalty, penalty_ex, offset );
 
-			
-  			exit( 1 );
+
+  			return;
         }
 
 		for( i=0; i<26; i++ ) for( j=0; j<26; j++ ) n_dis[i][j] = 0;

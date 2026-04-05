@@ -839,7 +839,7 @@ double partA__align( char **seq1, char **seq2, double *eff1, double *eff2, int i
 		if( outgap == 0 )
 		{
 			fprintf( stderr, "At present, outgap must be 1.\n" );
-			exit( 1 );
+			return -1.0;
 		}
 		wmrecords = AllocateFloatVec( lgth2+1 );
 		warpi = AllocateIntVec( lgth2+1 );
@@ -1558,7 +1558,7 @@ double partA__align_variousdist( int **which, double ***matrices, double **n_dyn
 		if( outgap == 0 )
 		{
 			fprintf( stderr, "At present, outgap must be 1 to allow shift.\n" );
-			exit( 1 );
+			return -1.0;
 		}
 		wmrecords = AllocateFloatVec( lgth2+1 );
 		warpi = AllocateIntVec( lgth2+1 );

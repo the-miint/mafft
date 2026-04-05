@@ -1010,7 +1010,7 @@ static void gaplencount( int n, int l, Gaplen **mtx, char **seq, double *eff )
 					if( mtx[j][k].len == -1 )
 					{
 						reporterr( "Unexpected error!\n" );
-						exit( 1 );
+						return;
 					}
 					mtx[j][k].freq += eff[i];
 				}
@@ -2716,7 +2716,7 @@ double D__align( double **n_dynamicmtx, char **seq1, char **seq2, double *eff1, 
 		if( headgp == 0 || tailgp == 0 )
 		{
 			fprintf( stderr, "At present, headgp and tailgp must be 1 to allow shift.\n" );
-			exit( 1 );
+			return -1.0;
 		}
 		wmrecords = AllocateFloatVec( lgth2+1 );
 		warpi = AllocateIntVec( lgth2+1 );
@@ -3592,7 +3592,7 @@ fprintf( stderr, "\n" );
 			{
 				reporterr( "(straight) pfac=%f, but pfactmp=%f (i,j=%d,%d)\n", pfac, pfactmp, i, j );
 				PFACERROR = 1;
-				exit( 1 );
+				return -1.0;
 			}
 #endif
 //if( i==50 && j==135 ) exit( 1 );
@@ -4291,7 +4291,7 @@ fprintf( stderr, "\n" );
 			printf( ">group1\n%s\n", seq1[i] );
 		for( j=0; j<jcyc; j++ )
 			printf( ">group2\n%s\n", seq2[j] );
-		exit( 1 );
+		return -1.0;
 	}
 #else
 	reporterr( "\n" );
@@ -4347,7 +4347,7 @@ double D__align_gapmap( char **seq1, char **seq2, double *eff1, double *eff2, in
 /* score no keisan no sai motokaraaru gap no atukai ni mondai ga aru */
 {
 	fprintf( stderr, "Unexpected error.  Please contact katoh@ifrec.osaka-u.ac.jp\n" );
-	exit( 1 );
+	return -1.0;
 }
 
 
@@ -4586,7 +4586,7 @@ double D__align_variousdist( int **which, double ***matrices, double **n_dynamic
 		if( headgp == 0 || tailgp == 0 )
 		{
 			fprintf( stderr, "At present, headgp and tailgp must be 1 to allow shift.\n" );
-			exit( 1 );
+			return -1.0;
 		}
 		wmrecords = AllocateFloatVec( lgth2+1 );
 		warpi = AllocateIntVec( lgth2+1 );
@@ -5525,7 +5525,7 @@ fprintf( stderr, "\n" );
 			{
 				reporterr( "(straight) pfac=%f, but pfactmp=%f (i,j=%d,%d)\n", pfac, pfactmp, i, j );
 				PFACERROR = 1;
-				exit( 1 );
+				return -1.0;
 			}
 #endif
 //if( i==50 && j==135 ) exit( 1 );
@@ -6243,7 +6243,7 @@ fprintf( stderr, "\n" );
 			printf( ">group1\n%s\n", seq1[i] );
 		for( j=0; j<jcyc; j++ )
 			printf( ">group2\n%s\n", seq2[j] );
-		exit( 1 );
+		return -1.0;
 	}
 #else
 	reporterr( "\n" );

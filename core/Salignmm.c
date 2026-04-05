@@ -1250,7 +1250,7 @@ double A__align( double **n_dynamicmtx, int penalty_l, int penalty_ex_l, char **
 		if( headgp == 0 || tailgp == 0 )
 		{
 			fprintf( stderr, "At present, headgp and tailgp must be 1 to allow shift.\n" );
-			exit( 1 );
+			return -1.0;
 		}
 		wmrecords = AllocateFloatVec( lgth2+1 );
 		warpi = AllocateIntVec( lgth2+1 );
@@ -1442,13 +1442,13 @@ double A__align( double **n_dynamicmtx, int penalty_l, int penalty_ex_l, char **
 	reporterr( "previouscall=%d\n", previouscall );
 	reporterr( "firstmem=%d, prefiousfirstmem=%d\n", firstmem, previousfirstmem );
 	reporterr( "lgth1=%d, previousfirstlen=%d\n", lgth1, previousfirstlen );
-	if( reuseprofiles ) exit(1 );
+	if( reuseprofiles ) return -1.0;
 #endif
 
 	if( n_dis[0][amino_n['-']] != 0 )
 	{
 		reporterr( "Bug probably in versions >7.36.  Please report this issue to katoh@ifrec.osaka-u.ac.jp\n" );
-		exit( 1 );
+		return -1.0;
 	}
 
 
@@ -1457,7 +1457,7 @@ double A__align( double **n_dynamicmtx, int penalty_l, int penalty_ex_l, char **
 		if( sgap1 )
 		{
 			reporterr( "The combination of sgap1 and cpmxhit is not supported. See Salignmm.c\n" );
-			exit( 1 );
+			return -1.0;
 		}
 
 
@@ -2070,7 +2070,7 @@ fprintf( stderr, "\n" );
 			{
 				reporterr( "totaleff1 = %50.40f\n", totaleff1 );
 				reporterr( "totaleff2 = %50.40f\n", totaleff2 );
-				exit( 1 );
+				return -1.0;
 			}
 			totaleff1 = totaleff1 * orieff1 / (orieff1 + orieff2);
 			totaleff2 = totaleff2 * orieff2 / (orieff1 + orieff2);
@@ -2187,7 +2187,7 @@ double A__align_gapmap( char **seq1, char **seq2, double *eff1, double *eff2, in
 /* score no keisan no sai motokaraaru gap no atukai ni mondai ga aru */
 {
 	fprintf( stderr, "Unexpected error.  Please contact katoh@ifrec.osaka-u.ac.jp\n" );
-	exit( 1 );
+	return -1.0;
 }
 
 
@@ -2389,7 +2389,7 @@ double A__align_variousdist( int **which, double ***matrices, double **n_dynamic
 		if( headgp == 0 || tailgp == 0 )
 		{
 			fprintf( stderr, "At present, headgp and tailgp must be 1.\n" );
-			exit( 1 );
+			return -1.0;
 		}
 		wmrecords = AllocateFloatVec( lgth2+1 );
 		warpi = AllocateIntVec( lgth2+1 );

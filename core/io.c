@@ -994,7 +994,8 @@ char *cutal( char *al, int al_display_start, int start, int end )
 void ErrorExit( char *message )
 {
 	fprintf( stderr, "%s\n", message );
-	exit( 1 );
+	if( !mafft_library_mode ) exit( 1 );
+	return;
 }
 
 void strncpy_caseC( char *str1, char *str2, int len )
@@ -1109,13 +1110,15 @@ void PreRead( FILE *fp, int *locnjob, int *locnlenmax )
 	if( *locnlenmax > N )
 	{
 		fprintf( stderr, "TOO LONG SEQUENCE!\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return;
 	}
-	if( njob > M  ) 
+	if( njob > M  )
 	{
 		fprintf( stderr, "TOO MANY SEQUENCE!\n" );
 		fprintf( stderr, "%d > %d\n", njob, M );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return;
 	}
 }	
 
@@ -1312,7 +1315,8 @@ static int charfilter( unsigned char *str )
 			fprintf( stderr, "\n" );
 			fprintf( stderr, "Characters '= < >' can be used only in the title lines in the --anysymbol or --text mode.\n" );
 			fprintf( stderr, "\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return -1;
 		}
 //		if( 0x20 < tmp && tmp < 0x7f )
 //		if( 0x0 <=tmp && tmp < 0x100 && 
@@ -1383,7 +1387,8 @@ char *load1SeqWithoutName_realloc_casepreserve( FILE *fpp )
 			if( !val )
 			{
 				fprintf( stderr, "Allocation error in load1SeqWithoutName_realloc \n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return NULL;
 			}
 			fprintf( stderr, "done.\n" );
 			cbuf = val + size-N;
@@ -1421,7 +1426,8 @@ char *load1SeqWithoutName_realloc( FILE *fpp )
 			if( !val )
 			{
 				fprintf( stderr, "Allocation error in load1SeqWithoutName_realloc \n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return NULL;
 			}
 			fprintf( stderr, "done.\n" );
 			cbuf = val + size-N;
@@ -3231,7 +3237,8 @@ int ReadBlastm7_avscore( FILE *fp, double *dis, int nin )
 			if( scorepersite != (int)scorepersite )
 			{
 				fprintf( stderr, "ERROR! sumscore=%f, sumlen=%f, and scorepersite=%f\n", sumscore, sumlen, scorepersite );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return -1;
 			}
 
 			if( !strncmp( "      </Iteration_hits>", b, 23 ) ) break;
@@ -4318,7 +4325,8 @@ void readlocalhomtable2_target( FILE*fp, int njob, LocalHom **localhomtable, cha
 		if( it == -1 )
 		{
 			reporterr( "hat3 ga okashii.  _target_ \n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		jt = targetmap[j];
 
@@ -4411,7 +4419,8 @@ void readlocalhomtable2_half( FILE*fp, int njob, LocalHom **localhomtable, char 
 		if( j <= i || i >= njob || i >= njob )
 		{
 			reporterr( "Check hat3.  The first sequence must be younger than the second one.\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		{
 			if( localhomtable[i][j-i].nokori++ > 0 )
@@ -4556,7 +4565,8 @@ void readlocalhomtable_target( FILE*fp, int ntarget, int njob, LocalHom **localh
 		if( it == -1 )
 		{
 			reporterr( "hat3 ga okashii.  _target_ \n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		jt = targetmap[j];
 
@@ -4650,7 +4660,8 @@ void readlocalhomtable_half( FILE*fp, int njob, LocalHom **localhomtable, char *
 		if( j <= i )
 		{
 			reporterr( "Check hat3.  The first sequence must be younger than the second one.\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		{
 			if( nlocalhom[i][j]++ > 0 )
@@ -4665,7 +4676,7 @@ void readlocalhomtable_half( FILE*fp, int njob, LocalHom **localhomtable, char *
 				tmpptr1 = localhomtable[i]+j-i;
 //				fprintf( stderr, "nlocalhom[%d][%d] = %d\n", i, j, nlocalhom[i][j] );
 			}
-	
+
 			tmpptr1->start1 = start1; // CHUUI!!!!
 			tmpptr1->start2 = start2;
 			tmpptr1->end1 = end1; // CHUUI!!!!
@@ -4709,7 +4720,8 @@ void readlocalhomtable( FILE*fp, int njob, LocalHom **localhomtable, char *kozoa
 		if( j <= i )
 		{
 			reporterr( "Check hat3.  The first sequence must be younger than the second one.\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		{
 			if( nlocalhom[i][j]++ > 0 )
@@ -4785,10 +4797,11 @@ void readlocalhomtable_two( FILE*fp, int norg, int nadd, LocalHom **localhomtabl
 	{
 //		fprintf( stderr, "\n" );
 		sscanf( buff, "%d %d %d %lf %d %d %d %d %s",  &i, &j, &overlapaa, &opt, &start1, &end1, &start2, &end2, infor );
-		if( *infor == 'k' ) 
+		if( *infor == 'k' )
 		{
 			fprintf( stderr, "Not supported!\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		j -= norg;
 
@@ -4869,10 +4882,11 @@ void readlocalhomtable_one( FILE*fp, int norg, int nadd, LocalHom **localhomtabl
 	{
 //		fprintf( stderr, "\n" );
 		sscanf( buff, "%d %d %d %lf %d %d %d %d %s",  &i, &j, &overlapaa, &opt, &start1, &end1, &start2, &end2, infor );
-		if( *infor == 'k' ) 
+		if( *infor == 'k' )
 		{
 			fprintf( stderr, "Not supported!\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		j -= norg;
 
@@ -5419,7 +5433,8 @@ static void showaamtxexample()
 	fprintf( stderr, "# Example end\n" );
 	fprintf( stderr, "Only the lower half is loaded\n" );
 	fprintf( stderr, "The last line (frequency) is optional.\n" );
-	exit( 1 );
+	if( !mafft_library_mode ) exit( 1 );
+	return;
 }
 
 double *loadaamtx( int *rescalept )
@@ -5445,14 +5460,18 @@ double *loadaamtx( int *rescalept )
 	if( dorp != 'p' )
 	{
 		fprintf( stderr, "User-defined matrix is not supported for DNA\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		FreeDoubleMtx( raw ); free( val ); free( map );
+		return NULL;
 	}
 
 	mf = fopen( mtxfname, "r" );
 	if( mf == NULL )
 	{
 		fprintf( stderr, "Cannot open the _aamtx file\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		FreeDoubleMtx( raw ); free( val ); free( map );
+		return NULL;
 	}
 
 	inorder = calloc( 1000, sizeof( char ) );
@@ -5483,6 +5502,8 @@ double *loadaamtx( int *rescalept )
 		{
 			fprintf( stderr, "%c: not found in the first 20 letters.\n", aaorder[i] );
 			showaamtxexample();
+			free( raw ); free( val ); free( map );
+			return NULL;
 		}
 		else
 		{
@@ -5506,7 +5527,7 @@ double *loadaamtx( int *rescalept )
 			raw[i][j] = atof( ptr1 );
 //			fprintf( stderr, "raw[][]=%f, %c-%c %d-%d\n", raw[i][j], inorder[i], inorder[j], i, j );
 			ptr1 = strchr( ptr1, ' ' );
-			if( ptr1 == NULL && j<i) showaamtxexample();
+			if( ptr1 == NULL && j<i) { showaamtxexample(); free( raw ); free( val ); free( map ); return NULL; }
 		}
 		i++;
 		if( i > 19 ) break;
@@ -5539,7 +5560,7 @@ double *loadaamtx( int *rescalept )
 				raw[20][j] = atof( ptr1 );
 //				fprintf( stderr, "raw[20][]=%f, %c %d\n", raw[20][j], inorder[i], j );
 				ptr1 = strchr( ptr1, ' ' );
-				if( ptr1 == NULL && j<19) showaamtxexample();
+				if( ptr1 == NULL && j<19) { showaamtxexample(); free( raw ); free( val ); free( map ); return NULL; }
 			}
 			break;
 		}
@@ -5603,7 +5624,8 @@ static int readasubalignment( char *s, int *t, int *preservegaps )
 				if( t[v] == 0 )
 				{
 					fprintf( stderr, "Format error? Sequences must be specified as 1, 2, 3...\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 );
+					return -1;
 				}
 				if( t[v] < 0 ) *preservegaps = 1;
 				t[v] = abs( t[v] );
@@ -5639,7 +5661,8 @@ static int countspace( char *s )
 				if( atoi( pt ) == 0 )
 				{
 					fprintf( stderr, "Format error? Sequences should be specified as 1, 2, 3...\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 );
+					return -1;
 				}
 			}
 		}
@@ -5664,7 +5687,8 @@ void readsubalignmentstable( int nseq, int **table, int *preservegaps, int *nsub
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open _subalignmentstable\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return;
 	}
 	if( table == NULL )
 	{
@@ -5677,7 +5701,8 @@ void readsubalignmentstable( int nseq, int **table, int *preservegaps, int *nsub
 			if( line[strlen(line)-1] != '\n' )
 			{
 				fprintf( stderr, "too long line? \n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return;
 			}
 			if( line[0] == '#' ) continue;
 			if( atoi( line ) == 0 ) continue;
@@ -5698,7 +5723,8 @@ void readsubalignmentstable( int nseq, int **table, int *preservegaps, int *nsub
 			if( line[strlen(line)-1] != '\n' )
 			{
 				fprintf( stderr, "too long line? \n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return;
 			}
 			if( line[0] == '#' ) continue;
 			if( atoi( line ) == 0 ) continue;
@@ -5709,13 +5735,15 @@ void readsubalignmentstable( int nseq, int **table, int *preservegaps, int *nsub
 				{
 					fprintf( stderr, "\nSequence %d appears in different groups.\n", p+1 );
 					fprintf( stderr, "Hierarchical grouping is not supported.\n\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 );
+					return;
 				}
 				tab01[p] = 1;
 				if( p > nseq-1 )
 				{
 					fprintf( stderr, "Sequence %d does not exist in the input sequence file.\n", p+1 );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 );
+					return;
 				}
 			}
 			lpos++;
@@ -5744,7 +5772,8 @@ void readmccaskill( FILE *fp, RNApair **pairprob, int length )
 		if( c != '>' )
 		{
 			fprintf( stderr, "format error in hat4 - 1\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 	}
 	fgets( gett, 999, fp );
@@ -5764,7 +5793,8 @@ void readmccaskill( FILE *fp, RNApair **pairprob, int length )
 		if( left >= length || right >= length )
 		{
 			fprintf( stderr, "format error in hat4 - 2\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 
 		if( prob < 0.01 ) continue; // 080607, mafft ni dake eikyou
@@ -5824,7 +5854,8 @@ void readpairfoldalign( FILE *fp, char *s1, char *s2, char *aln1, char *aln2, in
 	{
 		fprintf( stderr, "Error in FOLDALIGN\n" );
 		fprintf( stderr, "qstr = %s, but gett = %s\n", qstr, gett );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return;
 	}
 
 	while( !feof( fp ) )
@@ -5869,7 +5900,8 @@ void readpairfoldalign( FILE *fp, char *s1, char *s2, char *aln1, char *aln2, in
 	if( alnlen != posinaln )
 	{
 		fprintf( stderr, "Error in foldalign?\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return;
 	}
 
 	pa1 = aln1;
@@ -5917,7 +5949,8 @@ int myatoi( char *in )
 	if( in == NULL )
 	{
 		fprintf( stderr, "Error in myatoi()\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return -1;
 	}
 	return( atoi( in ) );
 }
@@ -5927,7 +5960,8 @@ unsigned long long myatoll( char *in )
 	if( in == NULL )
 	{
 		fprintf( stderr, "Error in myatoi()\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return 0;
 	}
 
 	unsigned long long tanni;
@@ -5946,7 +5980,8 @@ double myatof( char *in )
 	if( in == NULL )
 	{
 		fprintf( stderr, "Error in myatof()\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return -1.0;
 	}
 	return( atof( in ) );
 }
@@ -6015,30 +6050,34 @@ void treeout_bin( FILE *fp, int n, int ***topol, double **len, Treedep *dep, int
 	char c = '\n';
 	for( i=0; i<n-1; i++ )
 	{
-		if( fwrite( topol[i][0], sizeof( int ), 1, fp ) != 1 || 
+		if( fwrite( topol[i][0], sizeof( int ), 1, fp ) != 1 ||
 		    fwrite( topol[i][1], sizeof( int ), 1, fp ) != 1 )
 		{
 			reporterr( "write error in treeout_bin(), topol, i=%d\n", i );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
-		if( fwrite( len[i]+0, sizeof( double ), 1, fp ) != 1 || 
+		if( fwrite( len[i]+0, sizeof( double ), 1, fp ) != 1 ||
 		    fwrite( len[i]+1, sizeof( double ), 1, fp ) != 1 )
 		{
 			reporterr( "write error in treeout_bin(), len, i=%d\n", i );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
-		if( fwrite( &(dep[i].child0), sizeof( int ), 1, fp ) != 1 || 
+		if( fwrite( &(dep[i].child0), sizeof( int ), 1, fp ) != 1 ||
 		    fwrite( &(dep[i].child1), sizeof( int ), 1, fp ) != 1 ||
 		    fwrite( &(nfilesfornode[i]), sizeof( int ), 1, fp ) != 1 ||
 		    fwrite( &(dep[i].distfromtip), sizeof( double ), 1, fp ) != 1 )
 		{
 			reporterr( "write error in treeout_bin(), dep, i=%d\n", i );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		if( fwrite( &c, sizeof( char ), 1, fp ) != 1 )
 		{
 			reporterr( "write error in treeout_bin(), c, i=%d\n", i );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 	}
 }
@@ -6057,36 +6096,41 @@ void treein_bin( FILE *fp, int n, int ***topol, double **len, Treedep *dep, int 
 		topol[i][0][1] = -1;
 		topol[i][1][1] = -1;
 
-		if( fread( topol[i][0], sizeof( int ), 1, fp ) != 1 || 
+		if( fread( topol[i][0], sizeof( int ), 1, fp ) != 1 ||
 		    fread( topol[i][1], sizeof( int ), 1, fp ) != 1 )
 		{
 			reporterr( "read error in treein_bin(), topol, i=%d\n", i );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
-		if( fread( len[i]+0, sizeof( double ), 1, fp ) != 1 || 
+		if( fread( len[i]+0, sizeof( double ), 1, fp ) != 1 ||
 		    fread( len[i]+1, sizeof( double ), 1, fp ) != 1 )
 		{
 			reporterr( "read error in treein_bin(), len, i=%d\n", i );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
-		if( fread( &(dep[i].child0), sizeof( int ), 1, fp ) != 1 || 
+		if( fread( &(dep[i].child0), sizeof( int ), 1, fp ) != 1 ||
 		    fread( &(dep[i].child1), sizeof( int ), 1, fp ) != 1 ||
 		    fread( &(nfilesfornode[i]), sizeof( int ), 1, fp ) != 1 ||
 		    fread( &(dep[i].distfromtip), sizeof( double ), 1, fp ) != 1 )
 		{
 			reporterr( "read error in treein_bin(), dep, i=%d\n", i );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		if( fread( &c, sizeof( char ), 1, fp ) != 1 )
 		{
 			reporterr( "read error in treein_bin(), c, i=%d\n", i );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 
 		if( c != '\n' )
 		{
 			reporterr( "Error in tree file\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 	}
 }
@@ -6094,19 +6138,21 @@ void treein_bin( FILE *fp, int n, int ***topol, double **len, Treedep *dep, int 
 void uselhout( FILE *fp, int n, int *uselh )
 {
 
-	if( fwrite( uselh, sizeof( int ), n, fp ) != n ) 
+	if( fwrite( uselh, sizeof( int ), n, fp ) != n )
 	{
 		reporterr( "write error in uselhout()\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return;
 	}
 }
 
 int uselhin( FILE *fp, int n, int *uselh )
 {
-	if( fread( uselh, sizeof( int ), n, fp ) != n ) 
+	if( fread( uselh, sizeof( int ), n, fp ) != n )
 	{
 		reporterr( "read error in uselhout()\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return -1;
 	}
 
 	while( n-- ) if( *uselh++ == 0 ) return( 0 );
@@ -6126,7 +6172,8 @@ void getweightfromname( int n, double *w, char **name )
 		{
 			reporterr( "error in reading \">%s\"\n", name[i]+1 );
 			reporterr( "Format has to be \">n0=1000 n1=51 n2=2 sequencename\"\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 
 		//reporterr( "tmp[0] = %s\n", tmp[0] );
@@ -6139,7 +6186,8 @@ void getweightfromname( int n, double *w, char **name )
 		{
 			reporterr( "Error in reading \">%s\". n0=0?\n", name[i]+1 );
 			reporterr( "Format has to be \">n0=1000 n1=51 n2=2 sequencename\"\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 
 		w[i] = 1.0 / atof( tmp[0] );
@@ -6259,7 +6307,8 @@ void readexternalanchors( ExtAnch **extanch, int nseq, int *nogaplen )
 	if( fp == NULL )
 	{
 		reporterr( "Cannot open _externalanchors\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return;
 	}
 
 	size = 0;
@@ -6278,7 +6327,8 @@ void readexternalanchors( ExtAnch **extanch, int nseq, int *nogaplen )
 		if( *extanch == NULL )
 		{
 			reporterr( "Cannot realloc *extanch\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 
 		sscanf( buf, "%d %d %d %d %d %d %d", &(((*extanch)+size)->i), &(((*extanch)+size)->j), &(((*extanch)+size)->starti), &(((*extanch)+size)->endi), &(((*extanch)+size)->startj), &(((*extanch)+size)->endj), &(((*extanch)+size)->score) );
@@ -6286,7 +6336,7 @@ void readexternalanchors( ExtAnch **extanch, int nseq, int *nogaplen )
 
 		((*extanch)+size)->i -= 1; // 1-origin -> 0-origin
 		((*extanch)+size)->j -= 1; // 1-origin -> 0-origin
-		((*extanch)+size)->starti -= 1; 
+		((*extanch)+size)->starti -= 1;
 		((*extanch)+size)->startj -= 1;
 		((*extanch)+size)->endi -= 1;
 		((*extanch)+size)->endj -= 1;
@@ -6294,22 +6344,26 @@ void readexternalanchors( ExtAnch **extanch, int nseq, int *nogaplen )
 		if( (*extanch)[size].i >= nseq || (*extanch)[size].j >= nseq )
 		{
 			reporterr( "\nOut of range?  The input file has %d sequences but pair %d-%d was specified in line %d.\nNote that sequence IDs are counted from 1.\n", nseq, (*extanch)[size].i+1, (*extanch)[size].j+1, lineno );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		if( (*extanch)[size].i >= (*extanch)[size].j )
 		{
 			reporterr( "\nFormat problem?  \"%d %d\" in line %d.\nThe sequence id of the first column must be less than the second.\n", (*extanch)[size].i+1, (*extanch)[size].j+1, lineno );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		if( (*extanch)[size].starti > nogaplen[(*extanch)[size].i] )
 		{
 			reporterr( "\nOut of range?  len(seq%d)=%d, but anchor=%d in line %d.\nNote that position is counted from 1.\n", (*extanch)[size].i+1, nogaplen[(*extanch)[size].i], (*extanch)[size].starti+1, lineno );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		if( (*extanch)[size].startj > nogaplen[(*extanch)[size].j] )
 		{
 			reporterr( "\nOut of range?  len(seq%d)=%d, but anchor=%d in line %d.\nNote that position is counted from 1.\n", (*extanch)[size].j, nogaplen[(*extanch)[size].j]+1, (*extanch)[size].startj+1, lineno );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 
 		size++;

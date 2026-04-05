@@ -302,7 +302,7 @@ double G__align11( double **n_dynamicmtx, char **seq1, char **seq2, int alloclen
 		if( headgp == 0 || tailgp == 0 )
 		{
 			fprintf( stderr, "At present, headgp and tailgp must be 1.\n" );
-			exit( 1 );
+			return -1.0;
 		}
 
 		wmrecords = AllocateFloatVec( lgth2+1 );

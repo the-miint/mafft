@@ -1009,7 +1009,7 @@ int fastshrinklocalhom_one( int *mem1, int *mem2, int norg, LocalHom **localhom,
 			if( *intpt2 != norg ) 
 			{
 				fprintf( stderr, "ERROR! *intpt2 = %d\n", *intpt2 );
-				exit( 1 );
+				return -1;
 			}
 			if( localhom[*intpt1][0].opt == -1 )
 				localhomshrink[k1][k2] = NULL;

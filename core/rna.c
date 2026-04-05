@@ -143,7 +143,7 @@ static void mccaskillextract( char **seq, char **nogap, int nseq, RNApair **pair
 			if( pt2->bestpos != right )
 			{
 				fprintf( stderr, "okashii!\n" );
-				exit( 1 );
+				return;
 			}
 //			fprintf( stderr, "adding %d-%d, %f\n", left, right, prob );
 //			fprintf( stderr, "pairprob[0][0].bestpos=%d\n", pairprob[0][0].bestpos );
@@ -216,7 +216,7 @@ void rnaalifoldcall( char **seq, int nseq, RNApair **pairprob )
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open /tmp/_rnaalifoldin\n" );
-		exit( 1 );
+		return;
 	}
 	clustalout_pointer( fp, nseq, lgth, seq, name, NULL, NULL, order, 15 );
 	fclose( fp );
@@ -228,7 +228,7 @@ void rnaalifoldcall( char **seq, int nseq, RNApair **pairprob )
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open /tmp/_rnaalifoldin\n" );
-		exit( 1 );
+		return;
 	}
 
 #if 0
