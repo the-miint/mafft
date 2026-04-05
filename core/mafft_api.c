@@ -36,6 +36,107 @@ static void set_error(mafft_ctx_t *ctx, const char *fmt, ...)
 	va_end( args );
 }
 
+/* ---- fd-level log capture helpers ---- */
+
+typedef struct {
+	int saved_stderr;
+	int saved_stdout;
+	FILE *tmpfp;
+} fd_capture_t;
+
+static void fd_capture_start(fd_capture_t *cap)
+{
+	cap->saved_stderr = -1;
+	cap->saved_stdout = -1;
+	cap->tmpfp = tmpfile();
+	if( cap->tmpfp )
+	{
+		int tmpfd = fileno( cap->tmpfp );
+		int se = dup( STDERR_FILENO );
+		int so = dup( STDOUT_FILENO );
+		if( se < 0 || so < 0 )
+		{
+			/* fd table exhausted -- abort capture entirely */
+			if( se >= 0 ) close( se );
+			if( so >= 0 ) close( so );
+			fclose( cap->tmpfp );
+			cap->tmpfp = NULL;
+			return;
+		}
+		cap->saved_stderr = se;
+		cap->saved_stdout = so;
+		dup2( tmpfd, STDERR_FILENO );
+		dup2( tmpfd, STDOUT_FILENO );
+	}
+}
+
+static char *fd_capture_end(fd_capture_t *cap)
+{
+	char *buf = NULL;
+
+	if( cap->saved_stderr >= 0 )
+	{
+		long log_size;
+		size_t nread;
+		fflush( stderr );
+		fflush( stdout );
+
+		log_size = ftell( cap->tmpfp );
+		if( log_size > 0 )
+		{
+			buf = (char *)malloc( log_size + 1 );
+			if( buf )
+			{
+				rewind( cap->tmpfp );
+				nread = fread( buf, 1, log_size, cap->tmpfp );
+				buf[nread] = '\0';
+			}
+		}
+
+		dup2( cap->saved_stderr, STDERR_FILENO );
+		dup2( cap->saved_stdout, STDOUT_FILENO );
+		close( cap->saved_stderr );
+		close( cap->saved_stdout );
+		fclose( cap->tmpfp );
+	}
+	return buf;
+}
+
+/* Store captured log in context and deliver to callback.
+ * The callback receives temporary pointers into ctx->log_buf that are
+ * valid only for the duration of the callback (in-place NUL splitting).
+ * Must be called under mafft_global_lock. */
+static void deliver_log(mafft_ctx_t *ctx, char *captured)
+{
+	free( ctx->log_buf );
+	ctx->log_buf = captured;
+	ctx->log_len = captured ? strlen( captured ) : 0;
+
+	if( ctx->config.log_cb && ctx->log_buf )
+	{
+		char *p = ctx->log_buf;
+		char *end;
+		while( *p )
+		{
+			end = strchr( p, '\n' );
+			if( end )
+			{
+				*end = '\0';
+				if( *p )
+					ctx->config.log_cb( p, ctx->config.log_ud );
+				*end = '\n';
+				p = end + 1;
+			}
+			else
+			{
+				if( *p )
+					ctx->config.log_cb( p, ctx->config.log_ud );
+				break;
+			}
+		}
+	}
+}
+
 /* ---- Hidden header for self-describing output allocations ---- */
 
 typedef struct {
@@ -250,6 +351,93 @@ argv_fail:
 	return rc;
 }
 
+/* Build internal argv for disttbfast (FFT-NS-2). */
+static int build_fftns2_argv(const mafft_config_t *cfg, int resolved_seqtype,
+                             char ***argv_out, int *argc_out)
+{
+	char **av = NULL;
+	int ac = 0;
+	int cap = 30;
+	int rc = MAFFT_OK;
+	char tmp[64];
+
+	av = (char **)calloc( cap, sizeof(char *) );
+	if( !av ) return MAFFT_ERR_NOMEM;
+
+#define PUSH_ARG(s) do { \
+	if( ac >= cap ) { \
+		char **newav; \
+		cap *= 2; \
+		newav = (char **)realloc( av, cap * sizeof(char *) ); \
+		if( !newav ) { rc = MAFFT_ERR_NOMEM; goto argv_fail; } \
+		av = newav; \
+	} \
+	av[ac] = strdup(s); \
+	if( !av[ac] ) { rc = MAFFT_ERR_NOMEM; goto argv_fail; } \
+	ac++; \
+} while(0)
+
+#define PUSH_ARG_FMT(fmt, val) do { \
+	snprintf(tmp, sizeof(tmp), fmt, val); \
+	PUSH_ARG(tmp); \
+} while(0)
+
+	PUSH_ARG( "disttbfast" );
+
+	/* Sequence type */
+	if( resolved_seqtype == MAFFT_SEQ_DNA || resolved_seqtype == MAFFT_SEQ_RNA )
+		PUSH_ARG( "-D" );
+	else
+		PUSH_ARG( "-P" );
+
+	/* Retree cycles */
+	PUSH_ARG( "-E" );
+	PUSH_ARG_FMT( "%d", cfg->retree > 0 ? cfg->retree : 2 );
+
+	/* Gap open penalty */
+	PUSH_ARG( "-f" );
+	if( cfg->gap_open != 0.0 )
+		PUSH_ARG_FMT( "%.2f", cfg->gap_open );
+	else
+		PUSH_ARG( "-1.53" );
+
+	/* Offset */
+	PUSH_ARG( "-h" );
+	if( cfg->offset != 0.0 )
+		PUSH_ARG_FMT( "%.2f", cfg->offset );
+	else
+		PUSH_ARG( "0" );
+
+	/* K-tuple size (6 for both DNA and protein in MAFFT's default) */
+	PUSH_ARG( "-W" );
+	PUSH_ARG( "6" );
+
+	/* Thread count */
+	if( cfg->n_threads > 1 )
+	{
+		PUSH_ARG( "-C" );
+		PUSH_ARG_FMT( "%d", cfg->n_threads );
+	}
+
+#undef PUSH_ARG
+#undef PUSH_ARG_FMT
+
+	*argv_out = av;
+	*argc_out = ac;
+	return MAFFT_OK;
+
+argv_fail:
+	{
+		int j;
+		for( j = 0; j < ac; j++ )
+			free( av[j] );
+		free( av );
+	}
+	*argv_out = NULL;
+	*argc_out = 0;
+	return rc;
+}
+
 static void free_argv(char **av, int ac)
 {
 	int i;
@@ -352,8 +540,7 @@ int mafft_align(mafft_ctx_t *ctx,
 	if( strategy == MAFFT_STRATEGY_AUTO )
 		strategy = MAFFT_STRATEGY_PARTTREE; /* Phase 7 will add full auto logic */
 
-	/* Only PARTTREE is implemented in Phase 1 */
-	if( strategy != MAFFT_STRATEGY_PARTTREE )
+	if( strategy != MAFFT_STRATEGY_PARTTREE && strategy != MAFFT_STRATEGY_FFTNS2 )
 	{
 		set_error( ctx, "Strategy %d not yet implemented", strategy );
 		return MAFFT_ERR_INVALID_INPUT;
@@ -407,61 +594,55 @@ int mafft_align(mafft_ctx_t *ctx,
 		strcpy( work_seqs[i], seqs[i] );
 	}
 
-	/* Build argv */
-	rc = build_parttree_argv( &ctx->config, resolved_seqtype,
-	                          &internal_argv, &internal_argc );
-	if( rc != MAFFT_OK )
+	/* Build argv and call engine */
+	if( strategy == MAFFT_STRATEGY_PARTTREE )
 	{
-		set_error( ctx, "Failed to build internal argv" );
-		goto cleanup;
-	}
-
-	/* Call the internal engine */
-	rc = splittbfast_library( n_seqs, (int)lgui, work_names, work_seqs,
-	                          internal_argc, internal_argv, NULL );
-
-	/* Capture log from the internal buffer and deliver to callback */
-	{
-		const char *log = mafft_get_log();
-		free( ctx->log_buf );
-		if( log && log[0] != '\0' )
+		rc = build_parttree_argv( &ctx->config, resolved_seqtype,
+		                          &internal_argv, &internal_argc );
+		if( rc != MAFFT_OK )
 		{
-			ctx->log_len = strlen( log );
-			ctx->log_buf = (char *)malloc( ctx->log_len + 1 );
-			if( ctx->log_buf )
-				memcpy( ctx->log_buf, log, ctx->log_len + 1 );
+			set_error( ctx, "Failed to build internal argv" );
+			goto cleanup;
+		}
 
-			/* Deliver to log callback line-by-line */
-			if( ctx->config.log_cb && ctx->log_buf )
+		/* splittbfast_library() handles its own fd-level capture */
+		rc = splittbfast_library( n_seqs, (int)lgui, work_names, work_seqs,
+		                          internal_argc, internal_argv, NULL );
+
+		/* Harvest log from splittbfast's internal buffer */
+		{
+			const char *log = mafft_get_log();
+			char *captured = NULL;
+			if( log && log[0] != '\0' )
 			{
-				char *p = ctx->log_buf;
-				char *end;
-				while( *p )
-				{
-					end = strchr( p, '\n' );
-					if( end )
-					{
-						*end = '\0';
-						if( *p ) /* skip empty lines */
-							ctx->config.log_cb( p, ctx->config.log_ud );
-						*end = '\n';
-						p = end + 1;
-					}
-					else
-					{
-						if( *p )
-							ctx->config.log_cb( p, ctx->config.log_ud );
-						break;
-					}
-				}
+				captured = (char *)malloc( strlen(log) + 1 );
+				if( captured ) strcpy( captured, log );
 			}
+			mafft_clear_log();
+			deliver_log( ctx, captured );
 		}
-		else
+	}
+	else if( strategy == MAFFT_STRATEGY_FFTNS2 )
+	{
+		fd_capture_t cap;
+		char *captured;
+
+		rc = build_fftns2_argv( &ctx->config, resolved_seqtype,
+		                        &internal_argv, &internal_argc );
+		if( rc != MAFFT_OK )
 		{
-			ctx->log_buf = NULL;
-			ctx->log_len = 0;
+			set_error( ctx, "Failed to build internal argv" );
+			goto cleanup;
 		}
-		mafft_clear_log();
+
+		/* disttbfast has no built-in capture, so we wrap it */
+		fd_capture_start( &cap );
+
+		rc = disttbfast( n_seqs, (int)lgui, work_names, work_seqs,
+		                 internal_argc, internal_argv, NULL );
+
+		captured = fd_capture_end( &cap );
+		deliver_log( ctx, captured );
 	}
 
 	/* Translate internal return code */

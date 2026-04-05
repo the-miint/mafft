@@ -35,9 +35,14 @@ static const char *protein_seqs[]  = {
 
 /* ---- Native comparison helper ---- */
 
-static int run_native_parttree(const char **names, const char **seqs, int n,
-                               const char *seqtype_flag,
-                               char ***out_seqs, int *out_n)
+/*
+ * Run a native MAFFT binary on input sequences, parse FASTA output.
+ * cmd_fmt must contain two %s for input and output temp file paths.
+ * Example: "./splittbfast -D -f -1.53 ... < %s > %s 2>/dev/null"
+ */
+static int run_native_cmd(const char **names, const char **seqs, int n,
+                          const char *cmd_fmt,
+                          char ***out_seqs, int *out_n)
 {
 	char tmpfile_in[256], tmpfile_out[256];
 	FILE *fp;
@@ -59,10 +64,7 @@ static int run_native_parttree(const char **names, const char **seqs, int n,
 
 	{
 		char cmd[1024];
-		snprintf(cmd, sizeof(cmd),
-			"./splittbfast %s -f -1.53 -Q 100 -h 0 -p 50 -s -1 -x"
-			" < %s > %s 2>/dev/null",
-			seqtype_flag, tmpfile_in, tmpfile_out);
+		snprintf(cmd, sizeof(cmd), cmd_fmt, tmpfile_in, tmpfile_out);
 		if (system(cmd) != 0)
 		{
 			remove(tmpfile_in);
@@ -126,6 +128,28 @@ static int run_native_parttree(const char **names, const char **seqs, int n,
 	*out_seqs = result;
 	*out_n = count;
 	return 0;
+}
+
+static int run_native_parttree(const char **names, const char **seqs, int n,
+                               const char *seqtype_flag,
+                               char ***out_seqs, int *out_n)
+{
+	char fmt[512];
+	snprintf(fmt, sizeof(fmt),
+		"./splittbfast %s -f -1.53 -Q 100 -h 0 -p 50 -s -1 -x < %%s > %%s 2>/dev/null",
+		seqtype_flag);
+	return run_native_cmd(names, seqs, n, fmt, out_seqs, out_n);
+}
+
+static int run_native_disttbfast(const char **names, const char **seqs, int n,
+                                 const char *seqtype_flag,
+                                 char ***out_seqs, int *out_n)
+{
+	char fmt[512];
+	snprintf(fmt, sizeof(fmt),
+		"./disttbfast %s -f -1.53 -h 0 -W 6 -E 2 < %%s > %%s 2>/dev/null",
+		seqtype_flag);
+	return run_native_cmd(names, seqs, n, fmt, out_seqs, out_n);
 }
 
 /* Compare library output vs native as sets (order may differ) */
@@ -594,6 +618,126 @@ static void test_concurrency(void)
 	CHECK(arg2.aligned_len_out > 0, "thread 2: positive aligned_len");
 }
 
+/* ---- FFTNS2 tests (Phase 5) ---- */
+
+static void test_fftns2_align(void)
+{
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_FFTNS2;
+	cfg.seqtype = MAFFT_SEQ_DNA;
+
+	mafft_ctx_t *ctx = mafft_create(&cfg);
+	mafft_output_t *out = NULL;
+	mafft_stats_t stats;
+	int rc, i;
+
+	rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, &stats);
+	CHECK(rc == MAFFT_OK, "fftns2: align returns OK");
+	CHECK(out != NULL, "fftns2: output is non-NULL");
+
+	if (out)
+	{
+		CHECK(out->n_seqs == 3, "fftns2: output has 3 sequences");
+		CHECK(out->aligned_len > 0, "fftns2: aligned_len > 0");
+
+		for (i = 0; i < out->n_seqs; i++)
+			CHECK((int)strlen(out->seqs[i]) == out->aligned_len,
+			      "fftns2: seq length matches aligned_len");
+
+		mafft_output_free(out);
+	}
+
+	CHECK(stats.strategy_used == MAFFT_STRATEGY_FFTNS2,
+	      "fftns2: stats.strategy_used is FFTNS2");
+
+	/* Log should be captured */
+	const char *log = mafft_ctx_log(ctx);
+	CHECK(log[0] != '\0', "fftns2: log was captured");
+
+	mafft_destroy(ctx);
+}
+
+static void test_fftns2_vs_native(void)
+{
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_FFTNS2;
+	cfg.seqtype = MAFFT_SEQ_DNA;
+	mafft_ctx_t *ctx = mafft_create(&cfg);
+	mafft_output_t *out = NULL;
+	char **native_seqs = NULL;
+	int native_n = 0;
+	int rc, i;
+
+	rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, NULL);
+	if (rc != MAFFT_OK || !out)
+	{
+		CHECK(0, "fftns2 library align failed, cannot compare");
+		mafft_destroy(ctx);
+		return;
+	}
+
+	rc = run_native_disttbfast(dna_names, dna_seqs, 3, "-D",
+	                           &native_seqs, &native_n);
+	if (rc != 0 || native_n == 0)
+	{
+		CHECK(0, "native disttbfast failed, cannot compare");
+		mafft_output_free(out);
+		mafft_destroy(ctx);
+		return;
+	}
+
+	CHECK(native_n == out->n_seqs, "fftns2: native and library same seq count");
+	CHECK(compare_as_sets(out, native_seqs, native_n),
+	      "fftns2 DNA: library output matches native disttbfast");
+
+	for (i = 0; i < native_n; i++) free(native_seqs[i]);
+	free(native_seqs);
+	mafft_output_free(out);
+	mafft_destroy(ctx);
+}
+
+static void test_fftns2_protein_vs_native(void)
+{
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_FFTNS2;
+	cfg.seqtype = MAFFT_SEQ_PROTEIN;
+	mafft_ctx_t *ctx = mafft_create(&cfg);
+	mafft_output_t *out = NULL;
+	char **native_seqs = NULL;
+	int native_n = 0;
+	int rc, i;
+
+	rc = mafft_align(ctx, protein_names, protein_seqs, 3, &out, NULL);
+	if (rc != MAFFT_OK || !out)
+	{
+		CHECK(0, "fftns2 protein library align failed");
+		mafft_destroy(ctx);
+		return;
+	}
+
+	rc = run_native_disttbfast(protein_names, protein_seqs, 3, "-P",
+	                           &native_seqs, &native_n);
+	if (rc != 0 || native_n == 0)
+	{
+		CHECK(0, "native disttbfast protein failed");
+		mafft_output_free(out);
+		mafft_destroy(ctx);
+		return;
+	}
+
+	CHECK(native_n == out->n_seqs, "fftns2 protein: same seq count");
+	CHECK(compare_as_sets(out, native_seqs, native_n),
+	      "fftns2 protein: library matches native disttbfast");
+
+	for (i = 0; i < native_n; i++) free(native_seqs[i]);
+	free(native_seqs);
+	mafft_output_free(out);
+	mafft_destroy(ctx);
+}
+
 /* ---- Sequential DNA then protein test (Phase 4) ---- */
 
 static void test_sequential_dna_then_protein(void)
@@ -761,6 +905,9 @@ int main(void)
 	test_log_callback();
 	test_null_log_callback();
 	test_ctx_log_null();
+	test_fftns2_align();
+	test_fftns2_vs_native();
+	test_fftns2_protein_vs_native();
 	test_concurrency();
 	test_sequential_dna_then_protein();
 	test_sequential_protein_then_dna();

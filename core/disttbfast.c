@@ -147,7 +147,7 @@ typedef struct _distancematrixthread_arg
 #endif
 
 
-void arguments( int argc, char *argv[] )
+static void arguments( int argc, char *argv[] )
 {
     int c;
 
@@ -505,12 +505,14 @@ void arguments( int argc, char *argv[] )
     if( argc != 0 ) 
     {
         reporterr(       "options: Check source file !\n" );
-        exit( 1 );
+        if( !mafft_library_mode ) exit( 1 );
+        return;
     }
 	if( tbitr == 1 && outgap == 0 )
 	{
 		reporterr(       "conflicting options : o, m or u\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return;
 	}
 }
 
@@ -667,7 +669,7 @@ static void pickup( int n, int *seqlen, int ***topol, char **name, char **seq ) 
 
 static int nunknown = 0;
 
-void seq_grp_nuc( int *grp, char *seq )
+static void seq_grp_nuc( int *grp, char *seq )
 {
 	int tmp;
 	int *grpbk = grp;
@@ -688,7 +690,7 @@ void seq_grp_nuc( int *grp, char *seq )
 	}
 }
 
-void seq_grp( int *grp, char *seq )
+static void seq_grp( int *grp, char *seq )
 {
 	int tmp;
 	int *grpbk = grp;
@@ -709,7 +711,7 @@ void seq_grp( int *grp, char *seq )
 	}
 }
 
-void makecompositiontable_p( int *table, int *pointt )
+static void makecompositiontable_p( int *table, int *pointt )
 {
 	int point;
 
@@ -785,7 +787,7 @@ void makepointtable_nuc_octet( int *pointt, int *n )
 	*pointt = END_OF_VEC;
 }
 
-void makepointtable_nuc( int *pointt, int *n )
+static void makepointtable_nuc( int *pointt, int *n )
 {
 	int point;
 	register int *p;
@@ -815,7 +817,7 @@ void makepointtable_nuc( int *pointt, int *n )
 	*pointt = END_OF_VEC;
 }
 
-void makepointtable( int *pointt, int *n )
+static void makepointtable( int *pointt, int *n )
 {
 	int point;
 	register int *p;
@@ -2895,13 +2897,15 @@ static int treebase( int *nlen, char **aseq, int nadd, char *mergeoralign, char 
 			if( gaplen == NULL )
 			{
 				reporterr(       "Cannot realloc gaplen\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return -1;
 			}
 			gapmap = realloc( gapmap, ( *alloclen + 10 ) * sizeof( int ) );
 			if( gapmap == NULL )
 			{
 				reporterr(       "Cannot realloc gapmap\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return -1;
 			}
 			reporterr(       "done. *alloclen = %d\n", *alloclen );
 		}
@@ -3125,7 +3129,8 @@ static int treebase( int *nlen, char **aseq, int nadd, char *mergeoralign, char 
 		if( mergeoralign[l] == '1' ) // jissainiha nai. atarashii hairetsu ha saigo dakara.
 		{
 			reporterr( "Check source!!!\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return -1;
 		}
 		if( mergeoralign[l] == '2' )
 		{
@@ -3493,13 +3498,9 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 			if( ien > nlenmax ) nlenmax = ien;
 		}
 		infp = NULL;
-//		stderr = fopen( "/dev/null", "a" ); // Windows????
 		tmpargv = AllocateCharMtx( argc, 0 );
 		for( i=0; i<argc; i++ ) tmpargv[i] = argv[i];
-		gmsg = 1;
 	}
-	else
-		gmsg = 0; // iranai
 
 	arguments( argc, argv );
 	algbackup = alg; // tbfast wo disttbfast ni ketsugou shitatame.
@@ -3525,7 +3526,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 			if( !infp )
 			{
 				reporterr(       "Cannot open %s\n", inputfile );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return GUI_ERROR;
 			}
 		}
 		else
@@ -3539,7 +3541,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 	{
 		reporterr(       "The number of sequences must be < %d\n", 1000000 );
 		reporterr(       "Please try the --parttree option for such large data.\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return GUI_ERROR;
 	}
 
 	if( njob < 2 )
@@ -3555,7 +3558,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 		FreeCharMtx( seq );
 		FreeCharMtx( name );
 		free( nlen );
-		exit( 0 );
+		if( !mafft_library_mode ) exit( 0 );
+		return GUI_ERROR;
 	}
 
 	if( specificityconsideration != 0.0 && nlenmax)
@@ -3567,7 +3571,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 			reporterr( "Please use the normal mode.\n" );
 			reporterr( "Please also note that MAFFT does not assume genomic rearrangements.\n" );
 			reporterr( "\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return GUI_ERROR;
 		}
 	}
 
@@ -3615,7 +3620,10 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 	if( ngui )
 	{
 		if( copydatafromgui( namegui, seqgui, name, nlen, seq ) )
-			exit( 1 );
+		{
+			if( !mafft_library_mode ) exit( 1 );
+			return GUI_ERROR;
+		}
 	}
 	else
 	{
@@ -3663,7 +3671,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 	if( c )
 	{
 		reporterr(       "Illegal character %c\n", c );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return GUI_ERROR;
 	}
 
 	reporterr(       "\n" );
@@ -3672,12 +3681,14 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 	if( dorp == 'p' && tuplesize != 6 )
 	{
 		reporterr(       "tuplesize must be 6 for aa sequence\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return GUI_ERROR;
 	}
 	if( dorp == 'd' && tuplesize != 6 && tuplesize != 10 )
 	{
 		reporterr(       "tuplesize must be 6 or 10 for dna sequence\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return GUI_ERROR;
 	}
 
 	if( treein )
@@ -3687,7 +3698,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 		if( treein == 't' )
 		{
 			varpairscore( njob, npickx, nlenmax, seq, randomseed );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return GUI_ERROR;
 		}
 		else if( treein == 'c' )
 		{
@@ -3720,7 +3732,7 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 			}
 			else if( njob < 100 || 't' == varpairscore( njob, npickx, nlenmax, seq, randomseed ) )
 			{
-				if( treein == 'c' ) exit( 1 );
+				if( treein == 'c' ) { if( !mafft_library_mode ) exit( 1 ); return GUI_ERROR; }
 				reporterr( "Tree!\n" );
 				treein = 0;
 				nguidetree = 2;
@@ -3816,7 +3828,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 				else
 				{
 					reporterr(       "tuplesize=%d: not supported\n", tuplesize );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 );
+					return GUI_ERROR;
 				}
 			}
 			else                 /* amino */
@@ -4164,14 +4177,16 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 			else
 			{
 				reporterr( "Error. treein = %d or %c\n", treein, treein );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return GUI_ERROR;
 			}
 		}
 		else if( topin )
 		{
 			reporterr(       "Loading a topology ... " );
 			reporterr(       "--topin has been disabled\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return GUI_ERROR;
 //			loadtop( njob, mtx, topol, len );
 //			FreeFloatHalfMtx( mtx, njob );
 		}
@@ -4279,7 +4294,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 		if( !orderfp )
 		{
 			reporterr(       "Cannot open 'order'\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return GUI_ERROR;
 		}
 #if 0
 		for( i=0; (j=topol[njob-2][0][i])!=-1; i++ )
@@ -4363,7 +4379,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 						reporterr(       "# The %d additional sequences must be aligned\n", nadd );
 						reporterr(       "# Otherwise, try the '--add' option, instead of '--addprofile' option.\n" );
 						reporterr(       "###############################################################################\n" );
-						exit( 1 );
+						if( !mafft_library_mode ) exit( 1 );
+						return GUI_ERROR;
 					}
 				}
 				for( i=0; i<nadd; i++ ) addmem[i] = njob-nadd+i;
@@ -4399,7 +4416,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 					reporterr(       "# Check whether the %d sequences form a monophyletic cluster.\n", nadd );
 					reporterr(       "# If not, try the '--add' option, instead of the '--addprofile' option.\n" );
 					reporterr(       "############################################################################### \n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 );
+					return GUI_ERROR;
 				}
 				commongappick( nadd, seq+njob-nadd );
 				for( i=njob-nadd; i<njob; i++ ) strcpy( bseq[i], seq[i] );
@@ -4529,7 +4547,8 @@ int disttbfast( int ngui, int lgui, char **namegui, char **seqgui, int argc, cha
 					if( subtable[i][j] >= njob ) // check sumi
 					{
 						reporterr(       "No such sequence, %d.\n", subtable[i][j]+1 );
-						exit( 1 );
+						if( !mafft_library_mode ) exit( 1 );
+						return GUI_ERROR;
 					}
 					if( alignmentlength != strlen( seq[subtable[i][j]] ) )
 					{
@@ -5233,9 +5252,11 @@ chudan:
 	return( GUI_CANCEL );
 }
 
+#ifndef MAFFT_LIBRARY_ONLY
 int main( int argc, char **argv )
 {
 	int res = disttbfast( 0, 0, NULL, NULL, argc, argv, NULL );
 	if( res == GUI_CANCEL ) res = 0; // treeout de goto chudan wo riyousuru
 	return res;
 }
+#endif
