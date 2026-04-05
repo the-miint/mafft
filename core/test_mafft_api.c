@@ -594,6 +594,112 @@ static void test_concurrency(void)
 	CHECK(arg2.aligned_len_out > 0, "thread 2: positive aligned_len");
 }
 
+/* ---- Sequential DNA then protein test (Phase 4) ---- */
+
+static void test_sequential_dna_then_protein(void)
+{
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_PARTTREE;
+
+	mafft_ctx_t *ctx;
+	mafft_output_t *out = NULL;
+	char **native_seqs = NULL;
+	int native_n = 0;
+	int rc, i;
+
+	/* First: DNA alignment */
+	cfg.seqtype = MAFFT_SEQ_DNA;
+	ctx = mafft_create(&cfg);
+	rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, NULL);
+	CHECK(rc == MAFFT_OK, "sequential: DNA align succeeds");
+
+	if (rc == MAFFT_OK && out)
+	{
+		rc = run_native_parttree(dna_names, dna_seqs, 3, "-D",
+		                         &native_seqs, &native_n);
+		if (rc == 0 && native_n > 0)
+		{
+			CHECK(compare_as_sets(out, native_seqs, native_n),
+			      "sequential: DNA matches native");
+			for (i = 0; i < native_n; i++) free(native_seqs[i]);
+			free(native_seqs);
+			native_seqs = NULL;
+		}
+		mafft_output_free(out);
+		out = NULL;
+	}
+	mafft_destroy(ctx);
+
+	/* Second: protein alignment (same process, globals must be clean) */
+	cfg.seqtype = MAFFT_SEQ_PROTEIN;
+	ctx = mafft_create(&cfg);
+	rc = mafft_align(ctx, protein_names, protein_seqs, 3, &out, NULL);
+	CHECK(rc == MAFFT_OK, "sequential: protein align succeeds after DNA");
+
+	if (rc == MAFFT_OK && out)
+	{
+		rc = run_native_parttree(protein_names, protein_seqs, 3, "-P",
+		                         &native_seqs, &native_n);
+		if (rc == 0 && native_n > 0)
+		{
+			CHECK(compare_as_sets(out, native_seqs, native_n),
+			      "sequential: protein matches native after DNA");
+			for (i = 0; i < native_n; i++) free(native_seqs[i]);
+			free(native_seqs);
+		}
+		mafft_output_free(out);
+	}
+	mafft_destroy(ctx);
+}
+
+/* Protein-then-DNA: the dangerous direction because tsize shrinks
+ * from 46656 (protein) to 4096 (DNA).  If globals aren't reset,
+ * localcommonsextet_p's sentinel won't detect the mismatch and
+ * a heap overflow results. */
+static void test_sequential_protein_then_dna(void)
+{
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_PARTTREE;
+
+	mafft_ctx_t *ctx;
+	mafft_output_t *out = NULL;
+	char **native_seqs = NULL;
+	int native_n = 0;
+	int rc, i;
+
+	/* First: protein */
+	cfg.seqtype = MAFFT_SEQ_PROTEIN;
+	ctx = mafft_create(&cfg);
+	rc = mafft_align(ctx, protein_names, protein_seqs, 3, &out, NULL);
+	CHECK(rc == MAFFT_OK, "sequential P->D: protein align succeeds");
+	if (out) mafft_output_free(out);
+	out = NULL;
+	mafft_destroy(ctx);
+
+	/* Second: DNA (tsize shrinks, sentinel must detect) */
+	cfg.seqtype = MAFFT_SEQ_DNA;
+	ctx = mafft_create(&cfg);
+	rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, NULL);
+	CHECK(rc == MAFFT_OK, "sequential P->D: DNA align succeeds after protein");
+
+	if (rc == MAFFT_OK && out)
+	{
+		rc = run_native_parttree(dna_names, dna_seqs, 3, "-D",
+		                         &native_seqs, &native_n);
+		if (rc == 0 && native_n > 0)
+		{
+			CHECK(compare_as_sets(out, native_seqs, native_n),
+			      "sequential P->D: DNA matches native after protein");
+			for (i = 0; i < native_n; i++) free(native_seqs[i]);
+			free(native_seqs);
+		}
+		mafft_output_free(out);
+	}
+	mafft_destroy(ctx);
+}
+
 /* ---- Custom allocator test ---- */
 
 static int alloc_count = 0;
@@ -656,6 +762,8 @@ int main(void)
 	test_null_log_callback();
 	test_ctx_log_null();
 	test_concurrency();
+	test_sequential_dna_then_protein();
+	test_sequential_protein_then_dna();
 	test_custom_allocator();
 
 	fprintf(stdout, "\n%d passed, %d failed\n", n_pass, n_fail);

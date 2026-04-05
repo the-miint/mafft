@@ -4279,8 +4279,8 @@ void initFiles( void )
 
 void closeFiles( void )
 {
-	fclose( prep_g );
-	fclose( trap_g );
+	if( prep_g ) fclose( prep_g );
+	if( trap_g ) fclose( trap_g );
 }
 
 
