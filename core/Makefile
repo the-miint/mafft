@@ -232,9 +232,17 @@ mafft_api.$(OBJ) : mafft_api.c mafft_api.h
 disttbfast_lib.$(OBJ) : disttbfast.c
 	$(CC) $(MYCFLAGS) -DMAFFT_LIBRARY_ONLY -fPIC -c -o $@ $<
 
+tbfast_lib.$(OBJ) : tbfast.c
+	$(CC) $(MYCFLAGS) -DMAFFT_LIBRARY_ONLY -fPIC -c -o $@ $<
+
+dvtditr_lib.$(OBJ) : dvtditr.c
+	$(CC) $(MYCFLAGS) -DMAFFT_LIBRARY_ONLY -fPIC -c -o $@ $<
+
 OBJMAFFTPARTTREELIB = mtxutl.$(OBJ) io.$(OBJ) mltaln9.$(OBJ) tddis.$(OBJ) constants.$(OBJ) partSalignmm.$(OBJ) Lalignmm.$(OBJ) rna.$(OBJ) Salignmm.$(OBJ) Dalignmm.$(OBJ) \
 		    Falign.$(OBJ) Falign_localhom.$(OBJ) Galign11.$(OBJ) Lalign11.$(OBJ) genalign11.$(OBJ) SAalignmm.$(OBJ) MSalignmm.$(OBJ) \
-			splittbfast_lib.$(OBJ) disttbfast_lib.$(OBJ) addfunctions.$(OBJ) \
+			splittbfast_lib.$(OBJ) disttbfast_lib.$(OBJ) tbfast_lib.$(OBJ) dvtditr_lib.$(OBJ) \
+			addfunctions.$(OBJ) nj.$(OBJ) tditeration.$(OBJ) treeOperation.$(OBJ) \
+			pairlocalalign.$(OBJ) MSalign11.$(OBJ) \
 			defs.$(OBJ) fft.$(OBJ) fftFunctions.$(OBJ) mafft_api.$(OBJ)
 
 libmafft_parttree.a : $(OBJMAFFTPARTTREELIB)

@@ -30,7 +30,7 @@ static void calcmaxdistclass( void )
 	return;
 }
 
-void arguments( int argc, char *argv[] )
+static void arguments( int argc, char *argv[] )
 {
 	int c;
 	char *argkey;
@@ -221,7 +221,8 @@ void arguments( int argc, char *argv[] )
 					else
 					{
 						fprintf( stderr, "Unknown parallelization strategy, %s\n", argkey );
-						exit( 1 );
+						if( !mafft_library_mode ) exit( 1 );
+						return;
 					}
 //					exit( 1 );
 					--argc; 
@@ -407,7 +408,8 @@ void arguments( int argc, char *argv[] )
 	if( argc != 0 ) 
 	{
 		fprintf( stderr, "options : Check source file!\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return;
 	}
 #if 0
 	if( alg == 'A' && weight == 0 ) 
@@ -416,7 +418,7 @@ void arguments( int argc, char *argv[] )
 }
 
 
-int main( int argc, char *argv[] )
+static int dvtditr_main( int argc, char *argv[] )
 {
     int identity;
 	static int nlen[M];
@@ -466,7 +468,8 @@ int main( int argc, char *argv[] )
 		if( !infp ) 
 		{
 			fprintf( stderr, "Cannot open %s\n", inputfile );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return -1;
 		}
 	}
 	else    
@@ -499,7 +502,8 @@ int main( int argc, char *argv[] )
 		FreeCharMtx( name );
 //		free( nlen );
 		closeFiles();
-		exit( 0 );
+		if( !mafft_library_mode ) exit( 0 );
+		return 0;
 	}
 
 
@@ -518,7 +522,8 @@ int main( int argc, char *argv[] )
 		FreeCharMtx( name );
 //		free( nlen );
 		closeFiles();
-		exit( 0 );
+		if( !mafft_library_mode ) exit( 0 );
+		return 0;
 	}
 
 
@@ -679,7 +684,8 @@ int main( int argc, char *argv[] )
 	if( !identity ) 
 	{
 		fprintf( stderr, "Input pre-aligned data\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return -1;
 	}
 	constants( njob, seq_g );
 
@@ -712,7 +718,8 @@ int main( int argc, char *argv[] )
 	if( c )
 	{
 		fprintf( stderr, "Illegal character %c\n", c );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return -1;
 	}
 	commongappick( njob, seq_g );
 
@@ -782,7 +789,8 @@ exit( 1 );
 		else if( intop ) // v6.528 deha if( intop ) dattanode intree ga mukou datta.
 		{
 			fprintf( stderr, "--topin has been disabled\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return -1;
 //			veryfastsupg_double_loadtop( njob, eff, topol, len );
 		}
 		else if( subalignment )
@@ -864,7 +872,8 @@ exit( 1 );
 	if( !orderfp )
 	{
 		fprintf( stderr, "Cannot open 'order'\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 );
+		return -1;
 	}
 	for( i=0; (j=topol[njob-2][0][i])!=-1; i++ )
 	{
@@ -955,7 +964,8 @@ exit( 1 );
 				if( subtable[i][j] >= njob )
 				{
 					fprintf( stderr, "No such sequence, %d.\n", subtable[i][j]+1 );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 );
+					return -1;
 				}
 				if( alignmentlength != strlen( seq[subtable[i][j]] ) )
 				{
@@ -979,7 +989,8 @@ exit( 1 );
 					}
 					fprintf( stderr, "###############################################################################\n" );
 					fprintf( stderr, "\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 );
+					return -1;
 				}
 				insubtable[subtable[i][j]] = 1;
 			}
@@ -1036,7 +1047,8 @@ exit( 1 );
 				}
 				fprintf( stderr, "############################################################################### \n" );
 				fprintf( stderr, "\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 );
+				return -1;
 			}
 //			commongappick( seq[subtable[i]], subalignment[i] ); // irukamo
 		}
@@ -1155,6 +1167,89 @@ exit( 1 );
 	SHOWVERSION;
 	return( 0 );
 }
+
+int dvtditr_library( int ngui, int lgui, char **namegui, char **seqgui,
+                     int argc, char **argv, int (*callback)(int, int, char*))
+{
+	int i, rc;
+	char tmpinfile[512];
+	FILE *fp;
+	int new_argc;
+	char **new_argv;
+
+	(void)callback; /* reserved for future use */
+
+	if( ngui <= 0 )
+		return dvtditr_main( argc, argv );
+
+	/* Library mode: write pre-aligned sequences as FASTA
+	 * (> prefix, used by getnumlen + readData_pointer). */
+	snprintf( tmpinfile, sizeof(tmpinfile), "dvtditr_input" );
+	fp = fopen( tmpinfile, "w" );
+	if( !fp ) return GUI_ERROR;
+	for( i = 0; i < ngui; i++ )
+		fprintf( fp, ">%s\n%s\n", namegui[i], seqgui[i] );
+	fclose( fp );
+
+	/* Prepend -i tmpinfile to argv */
+	new_argc = argc + 2;
+	new_argv = (char **)calloc( new_argc, sizeof(char *) );
+	if( !new_argv ) { remove( tmpinfile ); return GUI_ERROR; }
+	for( i = 0; i < argc; i++ ) new_argv[i] = argv[i];
+	new_argv[argc]   = "-i";
+	new_argv[argc+1] = tmpinfile;
+
+	initglobalvariables();
+	mafft_library_mode = 1;
+
+	rc = dvtditr_main( new_argc, new_argv );
+	free( new_argv );
+
+	/* Read back refined sequences from prep_g output.
+	 * dvtditr writes to prep_g (the "pre" file). Read it back. */
+	if( rc == 0 )
+	{
+		FILE *prefp = fopen( "pre", "r" );
+		if( prefp )
+		{
+			char line[65536];
+			int idx = -1;
+			while( fgets( line, sizeof(line), prefp ) )
+			{
+				int len = strlen(line);
+				while( len > 0 && (line[len-1] == '\n' || line[len-1] == '\r') )
+					line[--len] = '\0';
+				if( line[0] == '>' || line[0] == '=' )
+				{
+					idx++;
+					if( idx < ngui ) seqgui[idx][0] = '\0';
+				}
+				else if( idx >= 0 && idx < ngui && len > 0 )
+				{
+					size_t cur = strlen( seqgui[idx] );
+					if( (int)(cur + len) > lgui )
+					{
+						fclose( prefp );
+						remove( tmpinfile );
+						return GUI_LENGTHOVER;
+					}
+					strcat( seqgui[idx], line );
+				}
+			}
+			fclose( prefp );
+		}
+	}
+
+	remove( tmpinfile );
+	return rc;
+}
+
+#ifndef MAFFT_LIBRARY_ONLY
+int main( int argc, char *argv[] )
+{
+	return dvtditr_main( argc, argv );
+}
+#endif
 
 #if 0
 signed int main( int argc, char *argv[] )

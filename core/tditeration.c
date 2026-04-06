@@ -415,23 +415,23 @@ static void *athread( void *arg )
 	if( utree == 0 )
 	{
 		fprintf( stderr, "Dynamic tree is not supported in the multithread version.\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return NULL;
 	}
 	if( score_check == 2 )
 	{
 		fprintf( stderr, "Score_check 2 is not supported in the multithread version.\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return NULL;
 	}
 
 	if( weight == 2 )
 	{
 		fprintf( stderr, "Weight 2 is not supported in the multithread version.\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return NULL;
 	}
 	if( cooling &&  cut > 0.0 )
 	{
 		fprintf( stderr, "Cooling is not supported in the multithread version.\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return NULL;
 	}
 
 	tscorehistory = calloc( maxiter, sizeof( double ) );
@@ -798,7 +798,7 @@ static void *athread( void *arg )
 			else
 			{
 				fprintf( stderr, "weight error!\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return NULL;
 			}
 
 			yarinaoshi:
@@ -858,7 +858,7 @@ static void *athread( void *arg )
 			if( score_check == 2 )
 			{
 				fprintf( stderr, "Score_check 2 is not supported in the multithread version.\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return NULL;
 			}
 			else if( score_check )
 			{
@@ -881,7 +881,7 @@ static void *athread( void *arg )
 						if( alg == 'Q' )
 						{
 							fprintf( stderr, "'Q' is no longer supported\n" );
-							exit( 1 );
+							if( !mafft_library_mode ) exit( 1 ); return NULL;
 						}
 						else if( alg == 'd' )
 						{
@@ -910,14 +910,14 @@ static void *athread( void *arg )
 						if( alg == 'Q' )
 						{
 							fprintf( stderr, "'Q' is no longer supported\n" );
-							exit( 1 );
+							if( !mafft_library_mode ) exit( 1 ); return NULL;
 						}
 						else
 						{
 							imp_match_init_strict( NULL, clus1, clus2, length, length, mseq1, mseq2, effarr1, effarr2, effarr1_kozo, effarr2_kozo, localhomshrink, swaplist, 1, memlist[0], memlist[1], NULL, NULL, NULL, -1, 0 );
 
 							fprintf( stderr, "not supported\n" );
-							exit( 1 );
+							if( !mafft_library_mode ) exit( 1 ); return NULL;
 
 							for(  i=length-1; i>=0; i-- )
 							{
@@ -955,7 +955,7 @@ static void *athread( void *arg )
 			{
 				fprintf( stderr, "score_check = %d\n", score_check );
 				fprintf( stderr, "Not supported.  Please add --threadit 0 to disable the multithreading in the iterative refinement calculation.\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return NULL;
 			}
 
 
@@ -1015,7 +1015,7 @@ static void *athread( void *arg )
 					else
 					{
 						fprintf( stderr, "Not supported\n" );
-						exit( 1 );
+						if( !mafft_library_mode ) exit( 1 ); return NULL;
 					}
 				}
 				else if( use_fft )
@@ -1043,7 +1043,7 @@ static void *athread( void *arg )
 				else
 				{
 					fprintf( stderr, "\n\nUnexpected error.  Please contact katoh@ifrec.osaka-u.ac.jp\n\n\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return NULL;
 				}
 //				fprintf( stderr, "## impmatch = %f\n", impmatch );
 
@@ -1129,12 +1129,12 @@ static void *athread( void *arg )
 				if( isnan( mscore ) )
 				{
 					fprintf( stderr, "\n\nmscore became NaN\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return NULL;
 				}
 				if( isnan( tscore ) )
 				{
 					fprintf( stderr, "\n\ntscore became NaN\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return NULL;
 				}
 
 
@@ -1553,7 +1553,7 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 		if( parallelizationstrategy == BESTFIRST )
 		{
 			fprintf( stderr, "Not implemented.  Try --thread 1 --bestfirst\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return -1;
 		}
 		converged = 0;
 		if( cooling ) cut *= 2.0;
@@ -1575,7 +1575,7 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 				if( nkozo )
 				{
 					fprintf( stderr, "The combination of dynamic tree and kozo is not supported.\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return -1;
 				}
 				if( devide )
 				{
@@ -1821,7 +1821,7 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 					if( score_check == 2 )
 					{
 						fprintf( stderr, "Not supported\n" );
-						exit( 1 );
+						if( !mafft_library_mode ) exit( 1 ); return -1;
 						if( constraint )
 						{
 //							msshrinklocalhom( pair[0], pair[1], s1, s2, localhomtable, localhomshrink );
@@ -1835,7 +1835,7 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 								if( alg == 'Q' )
 								{
 									fprintf( stderr, "'Q' is no longer supported\n" );
-									exit( 1 );
+									if( !mafft_library_mode ) exit( 1 ); return -1;
 								}
 								else
 								{
@@ -1849,13 +1849,13 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 								if( alg == 'Q' )
 								{
 									fprintf( stderr, "'Q' is no longer supported\n" );
-									exit( 1 );
+									if( !mafft_library_mode ) exit( 1 ); return -1;
 								}
 								else
 								{
 									imp_match_init_strict( NULL, clus1, clus2, length, length, mseq1, mseq2, effarr1, effarr2, effarr1_kozo, effarr2_kozo, localhomshrink, swaplist, 1, memlist[0], memlist[1], NULL, NULL, NULL, -1, 0 );
 									fprintf( stderr, "not supported\n" );
-									exit( 1 );
+									if( !mafft_library_mode ) exit( 1 ); return -1;
 								}
 							}
 	//						fprintf( stderr, "### oimpmatch = %f\n", oimpmatch );
@@ -1882,7 +1882,7 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 						}
 #else // not yet checked
 						fprintf( stderr, "##### NOT YET CHECKED!!!!\n" );
-						exit( 1 );
+						if( !mafft_library_mode ) exit( 1 ); return -1;
 						tmpdouble = 0.0;
 						iu=0; 
 						for( i=0; (s1=memlist[0][i])!=-1; i++ ) 
@@ -1920,12 +1920,12 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 								if( alg == 'Q' )
 								{
 									fprintf( stderr, "'Q' is no longer supported\n" );
-									exit( 1 );
+									if( !mafft_library_mode ) exit( 1 ); return -1;
 								}
 								else if( alg == 'd' )
 								{
 									imp_match_init_strictD( NULL, clus1, clus2, length, length, mseq1, mseq2, effarr1, effarr2, effarr1_kozo, effarr2_kozo, localhomshrink, swaplist, 1, memlist[0], memlist[1], NULL, NULL, NULL, -1, 0 );
-	
+
 									for(  i=length-1; i>=0; i-- )
 									{
 										oimpmatchdouble += (double)imp_match_out_scD( i, i );
@@ -1949,15 +1949,15 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 								if( alg == 'Q' )
 								{
 									fprintf( stderr, "'Q' is no longer supported\n" );
-									exit( 1 );
+									if( !mafft_library_mode ) exit( 1 ); return -1;
 								}
 								else
 								{
 									imp_match_init_strict( NULL, clus1, clus2, length, length, mseq1, mseq2, effarr1, effarr2, effarr1_kozo, effarr2_kozo, localhomshrink, swaplist, 1, memlist[0], memlist[1], NULL, NULL, NULL, -1, 0 );
-	
+
 									fprintf( stderr, "not supported\n" );
-									exit( 1 );
-	
+									if( !mafft_library_mode ) exit( 1 ); return -1;
+
 									for(  i=length-1; i>=0; i-- )
 									{
 										oimpmatchdouble += (double)imp_match_out_sc( i, i );
@@ -2015,7 +2015,7 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 								if( alg == 'Q' )
 								{
 									fprintf( stderr, "'Q' is no longer supported\n" );
-									exit( 1 );
+									if( !mafft_library_mode ) exit( 1 ); return -1;
 								}
 								else if( alg == 'd' )
 								{
@@ -2033,18 +2033,18 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 								if( alg == 'Q' )
 								{
 									fprintf( stderr, "'Q' is no longer supported\n" );
-									exit( 1 );
+									if( !mafft_library_mode ) exit( 1 ); return -1;
 								}
 								else
 								{
 									imp_match_init_strict( NULL, clus1, clus2, length, length, mseq1, mseq2, effarr1, effarr2, effarr1_kozo, effarr2_kozo, localhomshrink, swaplist, 1, memlist[0], memlist[1], NULL, NULL, NULL, -1, 0 );
 									fprintf( stderr, "Not supported\n" );
-									exit( 1 );
+									if( !mafft_library_mode ) exit( 1 ); return -1;
 								}
 							}
 						}
 					}
-	
+
 	//				oimpmatch = 0.0;
 					if( constraint )
 					{
@@ -2133,7 +2133,7 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 						else
 						{
 							fprintf( stderr, "\n\nUnexpected error.  Please contact katoh@ifrec.osaka-u.ac.jp\n\n\n" );
-							exit( 1 );
+							if( !mafft_library_mode ) exit( 1 ); return -1;
 						}
 					}
 					else if( use_fft )
@@ -2157,10 +2157,10 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 					else
 					{
 						fprintf( stderr, "\n\nUnexpected error.  Please contact katoh@ifrec.osaka-u.ac.jp\n\n\n" );
-						exit( 1 );
+						if( !mafft_library_mode ) exit( 1 ); return -1;
 					}
 	//				fprintf( stderr, "## impmatch = %f\n", impmatch );
-								
+
 						if( checkC )
 						{
 							extern double DSPscore();
@@ -2272,12 +2272,12 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 						if( isnan( mscore ) )
 						{
 							fprintf( stderr, "\n\nmscore became NaN\n" );
-							exit( 1 );
+							if( !mafft_library_mode ) exit( 1 ); return -1;
 						}
 						if( isnan( tscore ) )
 						{
 							fprintf( stderr, "\n\ntscore became NaN\n" );
-							exit( 1 );
+							if( !mafft_library_mode ) exit( 1 ); return -1;
 						}
 	
 	

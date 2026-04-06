@@ -1,9 +1,13 @@
-#define _POSIX_C_SOURCE 200809L
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include "mltaln.h"
 #include "mafft_api.h"
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include <ftw.h>
+#include <sys/stat.h>
 
 /* ------------------------------------------------------------------ */
 /* Internal helpers                                                    */
@@ -52,8 +56,11 @@ static void fd_capture_start(fd_capture_t *cap)
 	if( cap->tmpfp )
 	{
 		int tmpfd = fileno( cap->tmpfp );
-		int se = dup( STDERR_FILENO );
-		int so = dup( STDOUT_FILENO );
+		int se, so;
+		fflush( stderr );
+		fflush( stdout );
+		se = dup( STDERR_FILENO );
+		so = dup( STDOUT_FILENO );
 		if( se < 0 || so < 0 )
 		{
 			/* fd table exhausted -- abort capture entirely */
@@ -351,8 +358,11 @@ argv_fail:
 	return rc;
 }
 
-/* Build internal argv for disttbfast (FFT-NS-2). */
+/* Build internal argv for disttbfast (FFT-NS-2).
+ * write_hat2: if nonzero, add -y -T flags to write hat2/hat3 for
+ *             a subsequent dvtditr refinement stage. */
 static int build_fftns2_argv(const mafft_config_t *cfg, int resolved_seqtype,
+                             int write_hat2,
                              char ***argv_out, int *argc_out)
 {
 	char **av = NULL;
@@ -412,6 +422,13 @@ static int build_fftns2_argv(const mafft_config_t *cfg, int resolved_seqtype,
 	PUSH_ARG( "-W" );
 	PUSH_ARG( "6" );
 
+	/* Write hat2/hat3 when chaining to dvtditr for iterative refinement */
+	if( write_hat2 )
+	{
+		PUSH_ARG( "-y" );
+		PUSH_ARG( "-T" );
+	}
+
 	/* Thread count */
 	if( cfg->n_threads > 1 )
 	{
@@ -436,6 +453,207 @@ argv_fail:
 	*argv_out = NULL;
 	*argc_out = 0;
 	return rc;
+}
+
+/* Build argv for dvtditr (iterative refinement). */
+static int build_dvtditr_argv(const mafft_config_t *cfg, int resolved_seqtype,
+                              char ***argv_out, int *argc_out)
+{
+	char **av = NULL;
+	int ac = 0;
+	int cap = 20;
+	int rc = MAFFT_OK;
+	char tmp[64];
+
+	av = (char **)calloc( cap, sizeof(char *) );
+	if( !av ) return MAFFT_ERR_NOMEM;
+
+#define PUSH_ARG(s) do { \
+	if( ac >= cap ) { \
+		char **newav; \
+		cap *= 2; \
+		newav = (char **)realloc( av, cap * sizeof(char *) ); \
+		if( !newav ) { rc = MAFFT_ERR_NOMEM; goto argv_fail; } \
+		av = newav; \
+	} \
+	av[ac] = strdup(s); \
+	if( !av[ac] ) { rc = MAFFT_ERR_NOMEM; goto argv_fail; } \
+	ac++; \
+} while(0)
+
+#define PUSH_ARG_FMT(fmt, val) do { \
+	snprintf(tmp, sizeof(tmp), fmt, val); \
+	PUSH_ARG(tmp); \
+} while(0)
+
+	PUSH_ARG( "dvtditr" );
+
+	/* Enable FFT-based alignment (required for threaded iteration) */
+	PUSH_ARG( "-F" );
+
+	/* Sequence type */
+	if( resolved_seqtype == MAFFT_SEQ_DNA || resolved_seqtype == MAFFT_SEQ_RNA )
+		PUSH_ARG( "-D" );
+	else
+		PUSH_ARG( "-P" );
+
+	/* Iteration count */
+	PUSH_ARG( "-I" );
+	PUSH_ARG_FMT( "%d", cfg->max_iterate > 0 ? cfg->max_iterate : 2 );
+
+	/* Gap open penalty */
+	PUSH_ARG( "-f" );
+	if( cfg->gap_open != 0.0 )
+		PUSH_ARG_FMT( "%.2f", cfg->gap_open );
+	else
+		PUSH_ARG( "-1.53" );
+
+	/* Offset */
+	PUSH_ARG( "-h" );
+	if( cfg->offset != 0.0 )
+		PUSH_ARG_FMT( "%.2f", cfg->offset );
+	else
+		PUSH_ARG( "0" );
+
+	/* Thread count */
+	if( cfg->n_threads > 1 )
+	{
+		PUSH_ARG( "-C" );
+		PUSH_ARG_FMT( "%d", cfg->n_threads );
+	}
+
+#undef PUSH_ARG
+#undef PUSH_ARG_FMT
+
+	*argv_out = av;
+	*argc_out = ac;
+	return MAFFT_OK;
+
+argv_fail:
+	{
+		int j;
+		for( j = 0; j < ac; j++ )
+			free( av[j] );
+		free( av );
+	}
+	*argv_out = NULL;
+	*argc_out = 0;
+	return rc;
+}
+
+/* Build argv for tbfast (tree-based progressive alignment).
+ * mode: 'L' = localpair, 'A' = globalpair, 'N' = genafpair, 'K' = ktuples */
+static int build_tbfast_argv(const mafft_config_t *cfg, int resolved_seqtype,
+                             char mode, char ***argv_out, int *argc_out)
+{
+	char **av = NULL;
+	int ac = 0;
+	int cap = 30;
+	int rc = MAFFT_OK;
+	char tmp[64];
+
+	av = (char **)calloc( cap, sizeof(char *) );
+	if( !av ) return MAFFT_ERR_NOMEM;
+
+#define PUSH_ARG(s) do { \
+	if( ac >= cap ) { \
+		char **newav; \
+		cap *= 2; \
+		newav = (char **)realloc( av, cap * sizeof(char *) ); \
+		if( !newav ) { rc = MAFFT_ERR_NOMEM; goto argv_fail; } \
+		av = newav; \
+	} \
+	av[ac] = strdup(s); \
+	if( !av[ac] ) { rc = MAFFT_ERR_NOMEM; goto argv_fail; } \
+	ac++; \
+} while(0)
+
+#define PUSH_ARG_FMT(fmt, val) do { \
+	snprintf(tmp, sizeof(tmp), fmt, val); \
+	PUSH_ARG(tmp); \
+} while(0)
+
+	PUSH_ARG( "tbfast" );
+
+	/* Sequence type */
+	if( resolved_seqtype == MAFFT_SEQ_DNA || resolved_seqtype == MAFFT_SEQ_RNA )
+		PUSH_ARG( "-D" );
+	else
+		PUSH_ARG( "-P" );
+
+	/* Pairwise alignment mode */
+	if( mode == 'L' )
+		PUSH_ARG( "-L" );       /* local pairwise (L-INS-i) */
+	else if( mode == 'A' )
+		PUSH_ARG( "-A" );       /* global pairwise (G-INS-i) */
+	else if( mode == 'N' )
+		PUSH_ARG( "-N" );       /* generalized affine (E-INS-i) */
+
+	/* Gap open penalty */
+	PUSH_ARG( "-f" );
+	if( cfg->gap_open != 0.0 )
+		PUSH_ARG_FMT( "%.2f", cfg->gap_open );
+	else
+		PUSH_ARG( "-1.53" );
+
+	/* Offset */
+	PUSH_ARG( "-h" );
+	if( cfg->offset != 0.0 )
+		PUSH_ARG_FMT( "%.2f", cfg->offset );
+	else
+		PUSH_ARG( "0" );
+
+	/* Output hat2/hat3 for dvtditr to read */
+	PUSH_ARG( "-b" );
+
+	/* Thread count */
+	if( cfg->n_threads > 1 )
+	{
+		PUSH_ARG( "-C" );
+		PUSH_ARG_FMT( "%d", cfg->n_threads );
+	}
+
+#undef PUSH_ARG
+#undef PUSH_ARG_FMT
+
+	*argv_out = av;
+	*argc_out = ac;
+	return MAFFT_OK;
+
+argv_fail:
+	{
+		int j;
+		for( j = 0; j < ac; j++ )
+			free( av[j] );
+		free( av );
+	}
+	*argv_out = NULL;
+	*argc_out = 0;
+	return rc;
+}
+
+/* ---- Temp directory management (honors $TMPDIR) ---- */
+
+static char *create_tmpdir(void)
+{
+	const char *tmpbase = getenv( "TMPDIR" );
+	char template[512];
+	if( !tmpbase || !tmpbase[0] ) tmpbase = "/tmp";
+	snprintf( template, sizeof(template), "%s/mafft-XXXXXX", tmpbase );
+	return mkdtemp( template ) ? strdup( template ) : NULL;
+}
+
+static int remove_cb(const char *fpath, const struct stat *sb,
+                     int typeflag, struct FTW *ftwbuf)
+{
+	(void)sb; (void)typeflag; (void)ftwbuf;
+	return remove( fpath );
+}
+
+static void cleanup_tmpdir(const char *dir)
+{
+	if( !dir ) return;
+	nftw( dir, remove_cb, 16, FTW_DEPTH | FTW_PHYS );
 }
 
 static void free_argv(char **av, int ac)
@@ -540,7 +758,12 @@ int mafft_align(mafft_ctx_t *ctx,
 	if( strategy == MAFFT_STRATEGY_AUTO )
 		strategy = MAFFT_STRATEGY_PARTTREE; /* Phase 7 will add full auto logic */
 
-	if( strategy != MAFFT_STRATEGY_PARTTREE && strategy != MAFFT_STRATEGY_FFTNS2 )
+	if( strategy != MAFFT_STRATEGY_PARTTREE &&
+	    strategy != MAFFT_STRATEGY_FFTNS2  &&
+	    strategy != MAFFT_STRATEGY_FFTNSI  &&
+	    strategy != MAFFT_STRATEGY_LINSI   &&
+	    strategy != MAFFT_STRATEGY_GINSI   &&
+	    strategy != MAFFT_STRATEGY_EINSI )
 	{
 		set_error( ctx, "Strategy %d not yet implemented", strategy );
 		return MAFFT_ERR_INVALID_INPUT;
@@ -627,7 +850,7 @@ int mafft_align(mafft_ctx_t *ctx,
 		fd_capture_t cap;
 		char *captured;
 
-		rc = build_fftns2_argv( &ctx->config, resolved_seqtype,
+		rc = build_fftns2_argv( &ctx->config, resolved_seqtype, 0,
 		                        &internal_argv, &internal_argc );
 		if( rc != MAFFT_OK )
 		{
@@ -636,6 +859,8 @@ int mafft_align(mafft_ctx_t *ctx,
 		}
 
 		/* disttbfast has no built-in capture, so we wrap it */
+		fflush( stderr );
+		fflush( stdout );
 		fd_capture_start( &cap );
 
 		rc = disttbfast( n_seqs, (int)lgui, work_names, work_seqs,
@@ -643,6 +868,143 @@ int mafft_align(mafft_ctx_t *ctx,
 
 		captured = fd_capture_end( &cap );
 		deliver_log( ctx, captured );
+	}
+	else if( strategy == MAFFT_STRATEGY_FFTNSI )
+	{
+		/* FFT-NS-i: disttbfast (progressive) → dvtditr (iterative refinement)
+		 * Uses temp directory for hat2/hat3 exchange. */
+		fd_capture_t cap;
+		char *captured;
+		char *tmpdir = NULL;
+		char *saved_cwd = NULL;
+		int stage1_argc = 0, stage2_argc = 0;
+		char **stage1_argv = NULL, **stage2_argv = NULL;
+
+		tmpdir = create_tmpdir();
+		if( !tmpdir )
+		{
+			set_error( ctx, "Failed to create temp directory" );
+			rc = MAFFT_ERR_INTERNAL;
+			goto cleanup;
+		}
+
+		saved_cwd = getcwd( NULL, 0 ); /* dynamic allocation */
+		if( !saved_cwd || chdir( tmpdir ) != 0 )
+		{
+			set_error( ctx, "Failed to chdir to temp directory" );
+			free( saved_cwd );
+			cleanup_tmpdir( tmpdir );
+			free( tmpdir );
+			rc = MAFFT_ERR_INTERNAL;
+			goto cleanup;
+		}
+
+		fflush( stderr );
+		fflush( stdout );
+		fd_capture_start( &cap );
+
+		/* Stage 1: progressive alignment + write hat2 for dvtditr */
+		rc = build_fftns2_argv( &ctx->config, resolved_seqtype, 1,
+		                        &stage1_argv, &stage1_argc );
+		if( rc == MAFFT_OK )
+			rc = disttbfast( n_seqs, (int)lgui, work_names, work_seqs,
+			                 stage1_argc, stage1_argv, NULL );
+		free_argv( stage1_argv, stage1_argc );
+		/* disttbfast returns GUI_CANCEL via goto chudan in -T mode;
+		 * this is normal completion, not an actual cancellation. */
+		if( rc == GUI_CANCEL ) rc = 0;
+
+		/* Stage 2: iterative refinement (reads hat2 from cwd) */
+		if( rc == 0 )
+		{
+			rc = build_dvtditr_argv( &ctx->config, resolved_seqtype,
+			                         &stage2_argv, &stage2_argc );
+			if( rc == MAFFT_OK )
+				rc = dvtditr_library( n_seqs, (int)lgui, work_names, work_seqs,
+				                      stage2_argc, stage2_argv, NULL );
+			free_argv( stage2_argv, stage2_argc );
+		}
+
+		captured = fd_capture_end( &cap );
+		deliver_log( ctx, captured );
+
+		chdir( saved_cwd );
+		free( saved_cwd );
+		cleanup_tmpdir( tmpdir );
+		free( tmpdir );
+	}
+	else if( strategy == MAFFT_STRATEGY_LINSI ||
+	         strategy == MAFFT_STRATEGY_GINSI ||
+	         strategy == MAFFT_STRATEGY_EINSI )
+	{
+		/* L-INS-i / G-INS-i / E-INS-i:
+		 * tbfast (pairwise + progressive) → dvtditr (iterative refinement) */
+		fd_capture_t cap;
+		char *captured;
+		char *tmpdir = NULL;
+		char *saved_cwd = NULL;
+		int stage1_argc = 0, stage2_argc = 0;
+		char **stage1_argv = NULL, **stage2_argv = NULL;
+		char mode;
+		mafft_config_t iter_cfg;
+
+		if( strategy == MAFFT_STRATEGY_LINSI )      mode = 'L';
+		else if( strategy == MAFFT_STRATEGY_GINSI )  mode = 'A';
+		else                                          mode = 'N';
+
+		tmpdir = create_tmpdir();
+		if( !tmpdir )
+		{
+			set_error( ctx, "Failed to create temp directory" );
+			rc = MAFFT_ERR_INTERNAL;
+			goto cleanup;
+		}
+
+		saved_cwd = getcwd( NULL, 0 );
+		if( !saved_cwd || chdir( tmpdir ) != 0 )
+		{
+			set_error( ctx, "Failed to chdir to temp directory" );
+			free( saved_cwd );
+			cleanup_tmpdir( tmpdir );
+			free( tmpdir );
+			rc = MAFFT_ERR_INTERNAL;
+			goto cleanup;
+		}
+
+		fflush( stderr );
+		fflush( stdout );
+		fd_capture_start( &cap );
+
+		/* Stage 1: tbfast with pairwise mode + write hat2/hat3 */
+		rc = build_tbfast_argv( &ctx->config, resolved_seqtype, mode,
+		                        &stage1_argv, &stage1_argc );
+		if( rc == MAFFT_OK )
+			rc = tbfast_library( n_seqs, (int)lgui, work_names, work_seqs,
+			                     stage1_argc, stage1_argv, NULL );
+		free_argv( stage1_argv, stage1_argc );
+		if( rc == GUI_CANCEL ) rc = 0;
+
+		/* Stage 2: iterative refinement with high iteration count */
+		if( rc == 0 )
+		{
+			iter_cfg = ctx->config;
+			if( iter_cfg.max_iterate <= 0 )
+				iter_cfg.max_iterate = 1000;
+			rc = build_dvtditr_argv( &iter_cfg, resolved_seqtype,
+			                         &stage2_argv, &stage2_argc );
+			if( rc == MAFFT_OK )
+				rc = dvtditr_library( n_seqs, (int)lgui, work_names, work_seqs,
+				                      stage2_argc, stage2_argv, NULL );
+			free_argv( stage2_argv, stage2_argc );
+		}
+
+		captured = fd_capture_end( &cap );
+		deliver_log( ctx, captured );
+
+		chdir( saved_cwd );
+		free( saved_cwd );
+		cleanup_tmpdir( tmpdir );
+		free( tmpdir );
 	}
 
 	/* Translate internal return code */

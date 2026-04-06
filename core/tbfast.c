@@ -533,17 +533,17 @@ static void arguments( int argc, char *argv[], int *pac, char **pav, int *tac, c
     if( argc != 0 ) 
     {
         fprintf( stderr, "argc=%d, tbfast options: Check source file !\n", argc );
-        exit( 1 );
+        if( !mafft_library_mode ) exit( 1 ); return;
     }
 	if( tbitr == 1 && outgap == 0 )
 	{
 		fprintf( stderr, "conflicting options : o, m or u\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 	if( alg == 'C' && outgap == 0 )
 	{
 		fprintf( stderr, "conflicting options : C, o\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 }
 
@@ -817,7 +817,7 @@ static void *treebasethread( void *arg ) // seed && compacttree==3 niha taioushi
 	if( compacttree == 3 )
 	{
 		reporterr( "bug. treebasethread() is no longer used when compacttree==3.\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return( NULL );
 	}
 
 
@@ -1104,7 +1104,7 @@ static void *treebasethread( void *arg ) // seed && compacttree==3 niha taioushi
 			if( alg == 'M' )
 			{
 				fprintf( stderr, "\n\nMemory saving mode is not supported.\n\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return( NULL );
 			}
 //			fprintf( stderr, "c" );
 			if( alg == 'A' )
@@ -1122,7 +1122,7 @@ static void *treebasethread( void *arg ) // seed && compacttree==3 niha taioushi
 			else if( alg == 'Q' )
 			{
 				fprintf( stderr, "Not supported\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return( NULL );
 			}
 		}
 		else if( force_fft || ( use_fft && ffttry ) )
@@ -1216,7 +1216,7 @@ static void *treebasethread( void *arg ) // seed && compacttree==3 niha taioushi
 }
 #endif
 
-void treebase( int *nlen, char **aseq, int nadd, char *mergeoralign, char **mseq1, char **mseq2, int ***topol, Treedep *dep, double *effarr, int *alloclen, LocalHom **localhomtable, RNApair ***singlerna, double *effarr_kozo, int *targetmap, int *targetmapr, int ntarget, int *uselh, int nseed, int *nfilesfornode )
+static void treebase( int *nlen, char **aseq, int nadd, char *mergeoralign, char **mseq1, char **mseq2, int ***topol, Treedep *dep, double *effarr, int *alloclen, LocalHom **localhomtable, RNApair ***singlerna, double *effarr_kozo, int *targetmap, int *targetmapr, int ntarget, int *uselh, int nseed, int *nfilesfornode )
 {
 	int i, l, m;
 	int len1nocommongap, len2nocommongap;
@@ -1439,13 +1439,13 @@ void treebase( int *nlen, char **aseq, int nadd, char *mergeoralign, char **mseq
 			if( gaplen == NULL )
 			{
 				fprintf( stderr, "Cannot realloc gaplen\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return;
 			}
 			gapmap = realloc( gapmap, ( *alloclen + 10 ) * sizeof( int ) );
 			if( gapmap == NULL )
 			{
 				fprintf( stderr, "Cannot realloc gapmap\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return;
 			}
 			fprintf( stderr, "done. *alloclen = %d\n", *alloclen );
 		}
@@ -1583,7 +1583,7 @@ void treebase( int *nlen, char **aseq, int nadd, char *mergeoralign, char **mseq
 			if( alg == 'M' )
 			{
 				fprintf( stderr, "\n\nMemory saving mode is not supported.\n\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return;
 			}
 //			fprintf( stderr, "c" );
 			if( alg == 'A' )
@@ -1604,7 +1604,7 @@ void treebase( int *nlen, char **aseq, int nadd, char *mergeoralign, char **mseq
 			else if( alg == 'Q' )
 			{
 				fprintf( stderr, "Not supported\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return;
 			}
 		}
 		else if( force_fft || ( use_fft && ffttry ) )
@@ -1664,7 +1664,7 @@ void treebase( int *nlen, char **aseq, int nadd, char *mergeoralign, char **mseq
 		if( mergeoralign[l] == '1' ) // jissainiha nai. atarashii hairetsu ha saigo dakara.
 		{
 			reporterr( "Check source!!\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 		if( mergeoralign[l] == '2' )
 		{
@@ -1857,7 +1857,7 @@ static double **preparepartmtx( int nseq )
 }
 
 
-int main( int argc, char *argv[] )
+static int tbfast_main( int argc, char *argv[] )
 {
 	static int  *nlen = NULL;	
 	static int *selfscore = NULL;
@@ -1951,10 +1951,10 @@ int main( int argc, char *argv[] )
 	if( inputfile )
 	{
 		infp = fopen( inputfile, "rb" );
-		if( !infp ) 
+		if( !infp )
 		{
 			fprintf( stderr, "Cannot open %s\n", inputfile );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return -1;
 		}
 	}
 	else    
@@ -1982,7 +1982,7 @@ int main( int argc, char *argv[] )
 		FreeCharMtx( name );
 		free( nlen );
 		closeFiles();
-		exit( 0 );
+		if( !mafft_library_mode ) exit( 0 ); return 0;
 	}
 
 #if !defined(mingw) && !defined(_MSC_VER)
@@ -2206,7 +2206,7 @@ int main( int argc, char *argv[] )
 					if( isalnum( r ) || r == ' ' )
 					{
 						reporterr( "Structural alignment is not yet supported in the --memsavepair mode. Try normal mode,\n" );
-						exit( 1 );
+						if( !mafft_library_mode ) exit( 1 ); return -1;
 					}
 					fclose( prep );
 				}
@@ -2320,7 +2320,7 @@ int main( int argc, char *argv[] )
 			if( localhomtable )
 			{
 				reporterr( "bug. localhomtable is already allocated?\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return -1;
 			}
 	
 			ilim = nseed;
@@ -2358,7 +2358,7 @@ int main( int argc, char *argv[] )
 			if( nkozo != nseed )
 			{
 				reporterr( "problem in input file?  nkozo != nseed\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return -1;
 			}
 		}
 
@@ -2415,7 +2415,7 @@ int main( int argc, char *argv[] )
 	if( c )
 	{
 		fprintf( stderr, "Illegal character %c\n", c );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return -1;
 	}
 
 //	writePre( njob, name, nlen, seq, 0 );
@@ -2595,7 +2595,7 @@ int main( int argc, char *argv[] )
 				if( nlen[i] != nlen[0] ) 
 				{
 					fprintf( stderr, "Input pre-aligned seqences or make hat2.\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return -1;
 				}
 			}
 	
@@ -2692,7 +2692,7 @@ int main( int argc, char *argv[] )
 				if( multidist )
 				{
 					reporterr( "Bug in v7.290.  Please email katoh@ifrec.osaka-u.ac.jp\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return -1;
 				}
 #if 0
 				prep = fopen( "hat2", "w" );
@@ -2793,7 +2793,7 @@ int main( int argc, char *argv[] )
 		if( topin )
 		{
 			fprintf( stderr, "--topin has been disabled\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return -1;
 //			fprintf( stderr, "Loading a topology ... " );
 //			loadtop( njob, iscore, topol, len );
 //			fprintf( stderr, "\ndone.\n\n" );
@@ -2865,7 +2865,7 @@ int main( int argc, char *argv[] )
 	if( !orderfp )
 	{
 		fprintf( stderr, "Cannot open 'order'\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return -1;
 	}
 #if 0
 	for( i=0; (j=topol[njob-2][0][i])!=-1; i++ )
@@ -2967,7 +2967,7 @@ int main( int argc, char *argv[] )
 				fprintf( stderr, "# ERROR!                                                                        #\n" );
 				fprintf( stderr, "# The original%4d sequences must be aligned                                    #\n", njob-nadd );
 				fprintf( stderr, "#################################################################################\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return -1;
 			}
 		}
 		if( addprofile )
@@ -2982,7 +2982,7 @@ int main( int argc, char *argv[] )
 					fprintf( stderr, "# The%4d additional sequences must be aligned                                #\n", nadd );
 					fprintf( stderr, "# Otherwise, try the '--add' option, instead of '--addprofile' option.        #\n" );
 					fprintf( stderr, "###############################################################################\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return -1;
 				}
 			}
 			for( i=0; i<nadd; i++ ) addmem[i] = njob-nadd+i;
@@ -3018,7 +3018,7 @@ int main( int argc, char *argv[] )
 				fprintf( stderr, "# Check whether the%4d sequences form a monophyletic cluster.                #\n", nadd );
 				fprintf( stderr, "# If not, try the '--add' option, instead of the '--addprofile' option.       #\n" );
 				fprintf( stderr, "############################################################################### \n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return -1;
 			}
 			commongappick( nadd, seq+njob-nadd );
 			for( i=njob-nadd; i<njob; i++ ) strcpy( bseq[i], seq[i] );
@@ -3144,7 +3144,7 @@ int main( int argc, char *argv[] )
 				if( subtable[i][j] >= njob )
 				{
 					fprintf( stderr, "No such sequence, %d.\n", subtable[i][j]+1 );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return -1;
 				}
 				if( alignmentlength != strlen( seq[subtable[i][j]] ) )
 				{
@@ -3168,7 +3168,7 @@ int main( int argc, char *argv[] )
 					}
 					fprintf( stderr, "###############################################################################\n" );
 					fprintf( stderr, "\n" );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return -1;
 				}
 				insubtable[subtable[i][j]] = 1;
 			}
@@ -3210,7 +3210,7 @@ int main( int argc, char *argv[] )
 				}
 				fprintf( stderr, "############################################################################### \n" );
 				fprintf( stderr, "\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return -1;
 			}
 //			commongappick( seq[subtable[i]], subalignment[i] ); // irukamo
 		}
@@ -3313,7 +3313,7 @@ int main( int argc, char *argv[] )
 		if( compacttree == 3 )
 		{
 			reporterr( "bug. treebasethread() is no longer used when compacttree==3.\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return -1;
 		}
 
 
@@ -3587,3 +3587,84 @@ chudan:
 	return( 0 );
 
 }
+
+int tbfast_library( int ngui, int lgui, char **namegui, char **seqgui,
+                    int argc, char **argv, int (*callback)(int, int, char*))
+{
+	int i, rc;
+	char tmpinfile[512];
+	FILE *fp;
+	int new_argc;
+	char **new_argv;
+
+	(void)callback;
+
+	if( ngui <= 0 )
+		return tbfast_main( argc, argv );
+
+	/* Library mode: write sequences as FASTA
+	 * (> prefix, used by getnumlen + readData_pointer). */
+	snprintf( tmpinfile, sizeof(tmpinfile), "tbfast_input" );
+	fp = fopen( tmpinfile, "w" );
+	if( !fp ) return GUI_ERROR;
+	for( i = 0; i < ngui; i++ )
+		fprintf( fp, ">%s\n%s\n", namegui[i], seqgui[i] );
+	fclose( fp );
+
+	new_argc = argc + 2;
+	new_argv = (char **)calloc( new_argc, sizeof(char *) );
+	if( !new_argv ) { remove( tmpinfile ); return GUI_ERROR; }
+	for( i = 0; i < argc; i++ ) new_argv[i] = argv[i];
+	new_argv[argc]   = "-i";
+	new_argv[argc+1] = tmpinfile;
+
+	initglobalvariables();
+	mafft_library_mode = 1;
+
+	rc = tbfast_main( new_argc, new_argv );
+	free( new_argv );
+
+	/* Read back aligned sequences from the "pre" output file. */
+	if( rc == 0 )
+	{
+		FILE *prefp = fopen( "pre", "r" );
+		if( prefp )
+		{
+			char line[65536];
+			int idx = -1;
+			while( fgets( line, sizeof(line), prefp ) )
+			{
+				int len = strlen(line);
+				while( len > 0 && (line[len-1] == '\n' || line[len-1] == '\r') )
+					line[--len] = '\0';
+				if( line[0] == '>' || line[0] == '=' )
+				{
+					idx++;
+					if( idx < ngui ) seqgui[idx][0] = '\0';
+				}
+				else if( idx >= 0 && idx < ngui && len > 0 )
+				{
+					size_t cur = strlen( seqgui[idx] );
+					if( (int)(cur + len) > lgui )
+					{
+						fclose( prefp );
+						remove( tmpinfile );
+						return GUI_LENGTHOVER;
+					}
+					strcat( seqgui[idx], line );
+				}
+			}
+			fclose( prefp );
+		}
+	}
+
+	remove( tmpinfile );
+	return rc;
+}
+
+#ifndef MAFFT_LIBRARY_ONLY
+int main( int argc, char *argv[] )
+{
+	return tbfast_main( argc, argv );
+}
+#endif

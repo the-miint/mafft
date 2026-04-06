@@ -247,7 +247,7 @@ static double recallpairfoldalign( char **mseq1, char **mseq2, int m1, int m2, i
 		if( fp == NULL )
 		{
 			fprintf( stderr, "Cannot open _foldalignout\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return 0.0;
 		}
 	}
 
@@ -377,10 +377,10 @@ static void readlastresx_singleq( FILE *fp, int n1, int nameq, Lastresx **lastre
 		if( gett[strlen(gett)-1] != '\n' )
 		{
 			fprintf( stderr, "Too long line?\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 
-		sscanf( gett, "%d %d %d %d %c %d %d %d %d %c %d", 
+		sscanf( gett, "%d %d %d %d %c %d %d %d %d %c %d",
 					&score, &name1, &start1, &alnSize1, &strand1, &seqSize1,
 					        &name2, &start2, &alnSize2, &strand2, &seqSize2 );
 
@@ -388,7 +388,7 @@ static void readlastresx_singleq( FILE *fp, int n1, int nameq, Lastresx **lastre
 		if( name2 != nameq )
 		{
 			fprintf( stderr, "BUG!!!\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 
 //		if( lastresx[name1][name2].score ) continue; // dame!!!!
@@ -429,7 +429,7 @@ static void readlastresx_singleq( FILE *fp, int n1, int nameq, Lastresx **lastre
 		if( ( tmpaln = (Aln *)realloc( lastresx[name1][name2].aln, (naln) * sizeof( Aln ) ) ) == NULL ) // yoyu nashi
 		{
 			fprintf( stderr, "Cannot reallocate lastresx[][].aln\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 		else
 			lastresx[name1][name2].aln = tmpaln;
@@ -444,13 +444,13 @@ static void readlastresx_singleq( FILE *fp, int n1, int nameq, Lastresx **lastre
 		if( ( lastresx[name1][name2].aln[prevnaln].reg1 = (Reg *)calloc( nreg+1, sizeof( Reg ) ) ) == NULL ) // yoyu nashi
 		{
 			fprintf( stderr, "Cannot reallocate lastresx[][].reg2\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 
 		if( ( lastresx[name1][name2].aln[prevnaln].reg2 = (Reg *)calloc( nreg+1, sizeof( Reg ) ) ) == NULL ) // yoyu nashi
 		{
 			fprintf( stderr, "Cannot reallocate lastresx[][].reg2\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 
 //		lastresx[name1][name2].aln[prevnaln].reg1[0].start = -1; // iranai?
@@ -496,7 +496,8 @@ static void readlastresx_group( FILE *fp, Lastresx **lastresx )
 		if( gett[strlen(gett)-1] != '\n' )
 		{
 			fprintf( stderr, "Too long line?\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 
 		sscanf( gett, "%d %d %d %d %c %d %d %d %d %c %d", 
@@ -542,7 +543,8 @@ static void readlastresx_group( FILE *fp, Lastresx **lastresx )
 		if( ( tmpaln = (Aln *)realloc( lastresx[name1][name2].aln, (naln) * sizeof( Aln ) ) ) == NULL ) // yoyu nashi
 		{
 			fprintf( stderr, "Cannot reallocate lastresx[][].aln\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 		else
 			lastresx[name1][name2].aln = tmpaln;
@@ -559,13 +561,15 @@ static void readlastresx_group( FILE *fp, Lastresx **lastresx )
 		if( ( lastresx[name1][name2].aln[prevnaln].reg1 = (Reg *)calloc( nreg+1, sizeof( Reg ) ) ) == NULL ) // yoyu nashi
 		{
 			fprintf( stderr, "Cannot reallocate lastresx[][].reg2\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 
 		if( ( lastresx[name1][name2].aln[prevnaln].reg2 = (Reg *)calloc( nreg+1, sizeof( Reg ) ) ) == NULL ) // yoyu nashi
 		{
 			fprintf( stderr, "Cannot reallocate lastresx[][].reg2\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return;
 		}
 
 //		lastresx[name1][name2].aln[prevnaln].reg1[0].start = -1; // iranai?
@@ -611,10 +615,10 @@ static void readlastresx( FILE *fp, int n1, int n2, Lastresx **lastresx, char **
 		if( gett[strlen(gett)-1] != '\n' )
 		{
 			fprintf( stderr, "Too long line?\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 
-		sscanf( gett, "%d %d %d %d %c %d %d %d %d %c %d", 
+		sscanf( gett, "%d %d %d %d %c %d %d %d %d %c %d",
 					&score, &name1, &start1, &alnSize1, &strand1, &seqSize1,
 					        &name2, &start2, &alnSize2, &strand2, &seqSize2 );
 
@@ -657,7 +661,7 @@ static void readlastresx( FILE *fp, int n1, int n2, Lastresx **lastresx, char **
 		if( ( tmpaln = (Aln *)realloc( lastresx[name1][name2].aln, (naln) * sizeof( Aln ) ) ) == NULL ) // yoyu nashi
 		{
 			fprintf( stderr, "Cannot reallocate lastresx[][].aln\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 		else
 			lastresx[name1][name2].aln = tmpaln;
@@ -674,13 +678,13 @@ static void readlastresx( FILE *fp, int n1, int n2, Lastresx **lastresx, char **
 		if( ( lastresx[name1][name2].aln[prevnaln].reg1 = (Reg *)calloc( nreg+1, sizeof( Reg ) ) ) == NULL ) // yoyu nashi
 		{
 			fprintf( stderr, "Cannot reallocate lastresx[][].reg2\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 
 		if( ( lastresx[name1][name2].aln[prevnaln].reg2 = (Reg *)calloc( nreg+1, sizeof( Reg ) ) ) == NULL ) // yoyu nashi
 		{
 			fprintf( stderr, "Cannot reallocate lastresx[][].reg2\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 
 //		lastresx[name1][name2].aln[prevnaln].reg1[0].start = -1; // iranai?
@@ -754,7 +758,8 @@ static void *lastcallthread_group( void *arg )
 		if( alg == 'R' ) // if 'r' -> calllast_fast
 		{
 			fprintf( stderr, "Not supported\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return NULL;
 		}
 		else // 'r'
 		{
@@ -766,7 +771,8 @@ static void *lastcallthread_group( void *arg )
 		if( !lfp )
 		{
 			fprintf( stderr, "Cannot open %s", command );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return NULL;
 		}
 		for( i=qstart; i<=qend; i++ )
 			fprintf( lfp, ">%d\n%s\n", i, qseq[i] );
@@ -781,14 +787,15 @@ static void *lastcallthread_group( void *arg )
 //		sprintf( command, "grep '>' _db%sd", kd );
 //		system( command );
 		sprintf( command, "%s/lastal -m %d -e %d -f 0 -s 1 -p _scoringmatrixforlast -a %d -b %d _db%sd _q%d > _lastres%d", whereispairalign, msize, laste, -penalty, -penalty_ex, kd, k, k );
-		if( system( command ) ) exit( 1 );
+		if( system( command ) ) { if( !mafft_library_mode ) exit( 1 ); return NULL; }
 	
 		sprintf( command, "_lastres%d", k );
 		lfp = fopen( command, "r" );
 		if( !lfp )
 		{
 			fprintf( stderr, "Cannot read _lastres%d", k );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 );
+			return NULL;
 		}
 //		readlastres( lfp, nd, nq, lastres, dseq, qseq );
 //		fprintf( stderr, "Reading lastres\n" );
@@ -856,7 +863,7 @@ static void *lastcallthread( void *arg )
 				if( !lfp )
 				{
 					fprintf( stderr, "Cannot open _db." );
-					exit( 1 );
+					if( !mafft_library_mode ) exit( 1 ); return NULL;
 				}
 				for( i=0; i<klim; i++ ) fprintf( lfp, ">%d\n%s\n", i, dseq[i] );
 				fclose( lfp );
@@ -864,7 +871,7 @@ static void *lastcallthread( void *arg )
 //				sprintf( command, "md5sum _db%dd > /dev/tty", k );
 //				system( command );
 
-				if( dorp == 'd' ) 
+				if( dorp == 'd' )
 					sprintf( command, "%s/lastdb _db%dd _db%dd", whereispairalign, k, k );
 				else
 					sprintf( command, "%s/lastdb -p _db%dd _db%dd", whereispairalign, k, k );
@@ -881,17 +888,17 @@ static void *lastcallthread( void *arg )
 		{
 			kd[0] = 0;
 		}
-		
+
 		sprintf( command, "_q%d", k );
 		lfp = fopen( command, "w" );
 		if( !lfp )
 		{
 			fprintf( stderr, "Cannot open %s", command );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return NULL;
 		}
 		fprintf( lfp, ">%d\n%s\n", k, qseq[k] );
 		fclose( lfp );
-	
+
 //		if( alg == 'R' ) msize = MAX(10,k+nq);
 //			else msize = MAX(10,nd+nq);
 		if( alg == 'R' ) msize = MAX(10,k*lastm);
@@ -901,14 +908,14 @@ static void *lastcallthread( void *arg )
 //		sprintf( command, "grep '>' _db%sd", kd );
 //		system( command );
 		sprintf( command, "%s/lastal -m %d -e %d -f 0 -s 1 -p _scoringmatrixforlast -a %d -b %d _db%sd _q%d > _lastres%d", whereispairalign, msize, laste, -penalty, -penalty_ex, kd, k, k );
-		if( system( command ) ) exit( 1 );
-	
+		if( system( command ) ) { if( !mafft_library_mode ) exit( 1 ); return NULL; }
+
 		sprintf( command, "_lastres%d", k );
 		lfp = fopen( command, "r" );
 		if( !lfp )
 		{
 			fprintf( stderr, "Cannot read _lastres%d", k );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return NULL;
 		}
 //		readlastres( lfp, nd, nq, lastres, dseq, qseq );
 //		fprintf( stderr, "Reading lastres\n" );
@@ -929,9 +936,9 @@ static void calllast_fast( int nd, char **dseq, int nq, char **qseq, Lastresx **
 	if( !lfp )
 	{
 		fprintf( stderr, "Cannot open _scoringmatrixforlast" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
-	if( dorp == 'd' ) 
+	if( dorp == 'd' )
 	{
 		fprintf( lfp, "      " );
 		for( j=0; j<4; j++ ) fprintf( lfp, " %c ", amino[j] );
@@ -964,7 +971,7 @@ static void calllast_fast( int nd, char **dseq, int nq, char **qseq, Lastresx **
 		if( !lfp )
 		{
 			fprintf( stderr, "Cannot open _dbd" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 		if( alg == 'R' )
 			j = njob-nadd;
@@ -1044,12 +1051,12 @@ static void calllast_once( int nd, char **dseq, int nq, char **qseq, Lastresx **
 	if( !lfp )
 	{
 		fprintf( stderr, "Cannot open _db" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 	for( i=0; i<nd; i++ ) fprintf( lfp, ">%d\n%s\n", i, dseq[i] );
 	fclose( lfp );
 
-	if( dorp == 'd' ) 
+	if( dorp == 'd' )
 	{
 		sprintf( command, "%s/lastdb _db _db", whereispairalign );
 		system( command );
@@ -1057,7 +1064,7 @@ static void calllast_once( int nd, char **dseq, int nq, char **qseq, Lastresx **
 		if( !lfp )
 		{
 			fprintf( stderr, "Cannot open _scoringmatrixforlast" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 		fprintf( lfp, "      " );
 		for( j=0; j<4; j++ ) fprintf( lfp, " %c ", amino[j] );
@@ -1093,7 +1100,7 @@ static void calllast_once( int nd, char **dseq, int nq, char **qseq, Lastresx **
 		if( !lfp )
 		{
 			fprintf( stderr, "Cannot open _scoringmatrixforlast" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 		fprintf( lfp, "      " );
 		for( j=0; j<20; j++ ) fprintf( lfp, " %c ", amino[j] );
@@ -1112,7 +1119,7 @@ static void calllast_once( int nd, char **dseq, int nq, char **qseq, Lastresx **
 	if( !lfp )
 	{
 		fprintf( stderr, "Cannot open _q" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 	for( i=0; i<nq; i++ )
 	{
@@ -1130,14 +1137,14 @@ static void calllast_once( int nd, char **dseq, int nq, char **qseq, Lastresx **
 	if( res )
 	{
 		fprintf( stderr, "LAST aborted\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 
 	lfp = fopen( "_lastres", "r" );
 	if( !lfp )
 	{
 		fprintf( stderr, "Cannot read _lastres" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 //	readlastres( lfp, nd, nq, lastres, dseq, qseq );
 	fprintf( stderr, "Reading lastres\n" );
@@ -1159,7 +1166,7 @@ static void callfoldalign( int nseq, char **mseq )
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open _foldalignin\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 	for( i=0; i<nseq; i++ )
 	{
@@ -1173,7 +1180,7 @@ static void callfoldalign( int nseq, char **mseq )
 	if( res )
 	{
 		fprintf( stderr, "Error in foldalign\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 
 }
@@ -1191,7 +1198,7 @@ static void calllara( int nseq, char **mseq, char *laraarg )
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open _larain\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 	for( i=0; i<nseq; i++ )
 	{
@@ -1207,7 +1214,7 @@ static void calllara( int nseq, char **mseq, char *laraarg )
 	if( res )
 	{
 		fprintf( stderr, "Error in lara\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 }
 
@@ -1229,7 +1236,7 @@ static double recalllara( char **mseq1, char **mseq2, int alloclen )
 		if( fp == NULL )
 		{
 			fprintf( stderr, "Cannot open _laraout\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return 0.0;
 		}
 		ungap1 = AllocateCharVec( alloclen );
 		ungap2 = AllocateCharVec( alloclen );
@@ -1263,7 +1270,7 @@ static double recalllara( char **mseq1, char **mseq2, int alloclen )
 		fprintf( stderr, "*mseq2  = %s\n", *mseq2 );
 		fprintf( stderr, "ungap2  = %s\n", ungap2 );
 		fprintf( stderr, "ori2    = %s\n", ori2 );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return 0.0;
 	}
 
 	value = (double)naivepairscore11( *mseq1, *mseq2, penalty );
@@ -1297,7 +1304,7 @@ static double calldafs_giving_bpp( char **mseq1, char **mseq2, char **bpp1, char
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot write to %s/_bpporg\n", dirname );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return 0.0;
 	}
 	fprintf( fp, ">a\n" );
 	while( *bpp1 )
@@ -1319,7 +1326,7 @@ static double calldafs_giving_bpp( char **mseq1, char **mseq2, char **bpp1, char
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open %s/_dafsinorg\n", dirname );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return 0.0;
 	}
 	fprintf( fp, ">1\n" );
 //	fprintf( fp, "%s\n", *mseq1 );
@@ -1347,7 +1354,7 @@ static double calldafs_giving_bpp( char **mseq1, char **mseq2, char **bpp1, char
 	if( res )
 	{
 		fprintf( stderr, "Error in dafs\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return 0.0;
 	}
 
 	sprintf( com, "%s/_dafsout", dirname );
@@ -1356,7 +1363,7 @@ static double calldafs_giving_bpp( char **mseq1, char **mseq2, char **bpp1, char
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open %s/_dafsout\n", dirname );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return 0.0;
 	}
 
 	myfgets( com, 999, fp ); // nagai kanousei ga arunode
@@ -1414,7 +1421,7 @@ static double callmxscarna_giving_bpp( char **mseq1, char **mseq2, char **bpp1, 
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot write to %s/_bpporg\n", dirname );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return 0.0;
 	}
 	fprintf( fp, ">a\n" );
 	while( *bpp1 )
@@ -1436,7 +1443,7 @@ static double callmxscarna_giving_bpp( char **mseq1, char **mseq2, char **bpp1, 
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open %s/_mxscarnainorg\n", dirname );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return 0.0;
 	}
 	fprintf( fp, ">1\n" );
 //	fprintf( fp, "%s\n", *mseq1 );
@@ -1469,7 +1476,7 @@ static double callmxscarna_giving_bpp( char **mseq1, char **mseq2, char **bpp1, 
 	if( res )
 	{
 		fprintf( stderr, "Error in mxscarna\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return 0.0;
 	}
 
 	sprintf( com, "%s/_mxscarnaout", dirname );
@@ -1478,7 +1485,7 @@ static double callmxscarna_giving_bpp( char **mseq1, char **mseq2, char **bpp1, 
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open %s/_mxscarnaout\n", dirname );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return 0.0;
 	}
 
 	fgets( com, 999, fp );
@@ -1525,7 +1532,7 @@ static void readhat4( FILE *fp, char ***bpp )
 	if( onechar != '>' )
 	{
 		fprintf( stderr, "Format error\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 	ungetc( onechar, fp );
 	fgets( oneline, 999, fp );
@@ -1560,7 +1567,7 @@ static void preparebpp( int nseq, char ***bpp )
 	if( !fp )
 	{
 		fprintf( stderr, "Cannot open hat4\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 	for( i=0; i<nseq; i++ )
 		readhat4( fp, bpp+i );
@@ -1906,19 +1913,19 @@ static void arguments( int argc, char *argv[] )
         cut = atof( (*argv) );
         argc--;
     }
-    if( argc != 0 ) 
+    if( argc != 0 )
     {
         fprintf( stderr, "pairlocalalign options: Check source file !\n" );
-        exit( 1 );
+        if( !mafft_library_mode ) exit( 1 ); return;
     }
 	if( tbitr == 1 && outgap == 0 )
 	{
 		fprintf( stderr, "conflicting options : o, m or u\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return;
 	}
 }
 
-int countamino( char *s, int end )
+static int countamino( char *s, int end )
 {
 	int val = 0;
 	while( end-- )
@@ -2325,7 +2332,7 @@ static void *athread( void *arg ) // alg='R', alg='r' -> tsukawarenai.
 					else
 					{
 						reporterr( "okashii\n" );
-						exit( 1 );
+						if( !mafft_library_mode ) exit( 1 ); return NULL;
 					}
 				}
 			}
@@ -2414,7 +2421,7 @@ static void pairalign( char **name, int *nlen, char **seq, char **aseq, char **d
 		if( ntarget == 0 )
 		{
 			reporterr( "\n\nAdd '>_focus_' to the title lines of the sequences to be focused on.\n\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 		else
 		{
@@ -2914,7 +2921,7 @@ static void pairalign( char **name, int *nlen, char **seq, char **aseq, char **d
 							else
 							{
 								reporterr( "okashii\n" );
-								exit( 1 );
+								if( !mafft_library_mode ) exit( 1 ); return;
 							}
 						}
 					}
@@ -3085,33 +3092,33 @@ int pairlocalalign( int ngui, int lgui, char **namegui, char **seqgui, double **
 			if( !infp )
 			{
 				fprintf( stderr, "Cannot open %s\n", inputfile );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return -1;
 			}
 		}
 		else
 			infp = stdin;
-	
+
 		getnumlen( infp );
 		rewind( infp );
-	
+
 		if( njob < 2 )
 		{
 			fprintf( stderr, "At least 2 sequences should be input!\n"
-							 "Only %d sequence found.\n", njob ); 
-			exit( 1 );
+							 "Only %d sequence found.\n", njob );
+			if( !mafft_library_mode ) exit( 1 ); return -1;
 		}
 		if( njob > M )
 		{
 			fprintf( stderr, "The number of sequences must be < %d\n", M );
 			fprintf( stderr, "Please try the splittbfast program for such large data.\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return -1;
 		}
 	}
 
 	if( ( alg == 'r' || alg == 'R' ) && dorp == 'p' )
 	{
 		fprintf( stderr, "Not yet supported\n" );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return -1;
 	}
 
 	alloclen = nlenmax*2;
@@ -3199,7 +3206,7 @@ int pairlocalalign( int ngui, int lgui, char **namegui, char **seqgui, double **
 	if( c )
 	{
 		fprintf( stderr, "Illegal character %c\n", c );
-		exit( 1 );
+		if( !mafft_library_mode ) exit( 1 ); return -1;
 	}
 
 //	writePre( njob, name, nlen, seq, 0 );
@@ -3348,7 +3355,7 @@ void pairalign_node( int njob, int nlenmax, char **name, char **seq, int ***topo
 		if( addprofile )
 		{
 			reporterr( "--addprofile is not yet supported\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 		alignmentlength = strlen( seq[0] );
 		for( i=njob-nadd-1; i>0; i-- )
@@ -3359,7 +3366,7 @@ void pairalign_node( int njob, int nlenmax, char **name, char **seq, int ***topo
 				fprintf( stderr, "# ERROR!                                                                       \n" );
 				fprintf( stderr, "# For the --add option, the original%4d sequences must be aligned              \n", njob-nadd );
 				fprintf( stderr, "#################################################################################\n" );
-				exit( 1 );
+				if( !mafft_library_mode ) exit( 1 ); return;
 			}
 		}
 	}
@@ -3382,7 +3389,7 @@ void pairalign_node( int njob, int nlenmax, char **name, char **seq, int ***topo
 		if( ntarget == 0 )
 		{
 			reporterr( "\n\nAdd '>_focus_' to the title lines of the sequences to be focused on.\n\n" );
-			exit( 1 );
+			if( !mafft_library_mode ) exit( 1 ); return;
 		}
 		else
 		{
