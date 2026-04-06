@@ -753,10 +753,32 @@ int mafft_align(mafft_ctx_t *ctx,
 	*out = NULL;
 	if( stats ) memset( stats, 0, sizeof(*stats) );
 
-	/* Resolve strategy */
+	/* Resolve strategy.  Based on mafft.tmpl auto-selection logic.
+	 *
+	 * mafft.tmpl has two local-distance branches (nlen<3000/nseq<100
+	 * and nlen<1000/nseq<200) that select L-INS-i; both are mapped to
+	 * FFTNSI here because LINSI/GINSI/EINSI depend on external pairwise
+	 * tools (LAST) not always available.
+	 *
+	 * mafft.tmpl uses FFTNS2 with memsavetree up to 200k sequences;
+	 * memsavetree is an optimization, not a correctness requirement, so
+	 * we use the same 200k boundary without it. */
 	strategy = ctx->config.strategy;
 	if( strategy == MAFFT_STRATEGY_AUTO )
-		strategy = MAFFT_STRATEGY_PARTTREE; /* Phase 7 will add full auto logic */
+	{
+		for( i = 0; i < n_seqs; i++ )
+		{
+			size_t sl = strlen( seqs[i] );
+			if( sl > max_input_len ) max_input_len = sl;
+		}
+
+		if( n_seqs < 500 && max_input_len < 10000 )
+			strategy = MAFFT_STRATEGY_FFTNSI;
+		else if( n_seqs < 200000 )
+			strategy = MAFFT_STRATEGY_FFTNS2;
+		else
+			strategy = MAFFT_STRATEGY_PARTTREE;
+	}
 
 	if( strategy != MAFFT_STRATEGY_PARTTREE &&
 	    strategy != MAFFT_STRATEGY_FFTNS2  &&
@@ -779,7 +801,8 @@ int mafft_align(mafft_ctx_t *ctx,
 	/* Timer starts after lock acquired -- measures computation, not wait */
 	clock_gettime( CLOCK_MONOTONIC, &t_start );
 
-	/* Compute max input length for buffer sizing (overflow-safe) */
+	/* Compute max input length for buffer sizing (overflow-safe).
+	 * May already be populated by AUTO strategy selection above. */
 	for( i = 0; i < n_seqs; i++ )
 	{
 		size_t len = strlen( seqs[i] );
@@ -1062,7 +1085,7 @@ cleanup:
 	if( stats )
 	{
 		stats->strategy_used = strategy;
-		stats->n_iterations  = 0; /* PartTree does not iterate */
+		stats->n_iterations  = 0; /* reserved: dvtditr does not expose count */
 		stats->elapsed_secs  = (t_end.tv_sec - t_start.tv_sec)
 		                     + (t_end.tv_nsec - t_start.tv_nsec) / 1e9;
 	}

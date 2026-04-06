@@ -73,8 +73,8 @@ typedef struct {
 
 /* ---- Stats ---- */
 typedef struct {
-	int     n_iterations;
-	int     strategy_used;
+	int     n_iterations;   /* reserved: always 0 until dvtditr exposes count */
+	int     strategy_used;  /* actual strategy (for MAFFT_STRATEGY_AUTO) */
 	double  elapsed_secs;
 } mafft_stats_t;
 

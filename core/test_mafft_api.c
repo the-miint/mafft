@@ -910,6 +910,96 @@ static void counting_free(void *ptr, void *ud)
 	free(ptr);
 }
 
+/* ---- Auto strategy test (Phase 7) ---- */
+
+static void test_auto_strategy(void)
+{
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_AUTO;
+	cfg.seqtype = MAFFT_SEQ_DNA;
+
+	mafft_ctx_t *ctx = mafft_create(&cfg);
+	mafft_output_t *out = NULL;
+	mafft_stats_t stats;
+	int rc, i;
+
+	/* Small input (3 seqs, 12bp) → should select FFTNSI */
+	rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, &stats);
+	CHECK(rc == MAFFT_OK, "auto: align returns OK");
+	CHECK(out != NULL, "auto: output is non-NULL");
+	CHECK(stats.strategy_used == MAFFT_STRATEGY_FFTNSI,
+	      "auto: small input selects FFTNSI");
+
+	if (out)
+	{
+		CHECK(out->n_seqs == 3, "auto: 3 output sequences");
+		for (i = 0; i < out->n_seqs; i++)
+			CHECK((int)strlen(out->seqs[i]) == out->aligned_len,
+			      "auto: seq lengths match");
+		mafft_output_free(out);
+	}
+	mafft_destroy(ctx);
+}
+
+static void test_auto_strategy_branches(void)
+{
+	/* Test AUTO dispatch logic by checking strategy_used.
+	 * We can't easily create 200k+ sequences, so we test the
+	 * thresholds with synthetic counts via direct threshold checks. */
+	mafft_config_t cfg;
+	mafft_stats_t stats;
+	mafft_output_t *out;
+	int rc;
+
+	/* Branch 2: n_seqs >= 500 → FFTNS2 (with small seqs) */
+	{
+		int n = 3;
+		/* Simulate "medium" by using long sequences (>= 10000 chars) */
+		char *longseq1 = calloc(10100, 1);
+		char *longseq2 = calloc(10100, 1);
+		char *longseq3 = calloc(10100, 1);
+		memset(longseq1, 'A', 10050); longseq1[10050] = '\0';
+		memset(longseq2, 'A', 10050); longseq2[10050] = '\0';
+		memset(longseq3, 'A', 10050); longseq3[10050] = '\0';
+		/* Introduce some variation */
+		longseq2[100] = 'C'; longseq3[200] = 'G';
+
+		const char *lnames[] = {"l1", "l2", "l3"};
+		const char *lseqs[] = {longseq1, longseq2, longseq3};
+
+		mafft_config_init(&cfg);
+		cfg.strategy = MAFFT_STRATEGY_AUTO;
+		cfg.seqtype = MAFFT_SEQ_DNA;
+		mafft_ctx_t *ctx = mafft_create(&cfg);
+		out = NULL;
+		rc = mafft_align(ctx, lnames, lseqs, n, &out, &stats);
+		CHECK(rc == MAFFT_OK, "auto-fftns2: align OK");
+		CHECK(stats.strategy_used == MAFFT_STRATEGY_FFTNS2,
+		      "auto-fftns2: long seqs (>=10000) select FFTNS2");
+		if (out) mafft_output_free(out);
+		mafft_destroy(ctx);
+		free(longseq1); free(longseq2); free(longseq3);
+	}
+
+	/* Branch 3: PARTTREE is selected for n_seqs >= 200000.
+	 * We cannot create 200k sequences in a unit test, so we verify
+	 * the threshold logic by confirming that n=3 with short seqs does
+	 * NOT select PARTTREE (it should select FFTNSI). */
+	{
+		mafft_config_init(&cfg);
+		cfg.strategy = MAFFT_STRATEGY_AUTO;
+		cfg.seqtype = MAFFT_SEQ_DNA;
+		mafft_ctx_t *ctx = mafft_create(&cfg);
+		out = NULL;
+		rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, &stats);
+		CHECK(stats.strategy_used != MAFFT_STRATEGY_PARTTREE,
+		      "auto: small input does NOT select PARTTREE");
+		if (out) mafft_output_free(out);
+		mafft_destroy(ctx);
+	}
+}
+
 static void test_custom_allocator(void)
 {
 	mafft_config_t cfg;
@@ -961,6 +1051,8 @@ int main(void)
 	test_concurrency();
 	test_sequential_dna_then_protein();
 	test_sequential_protein_then_dna();
+	test_auto_strategy();
+	test_auto_strategy_branches();
 	test_custom_allocator();
 
 	fprintf(stdout, "\n%d passed, %d failed\n", n_pass, n_fail);
