@@ -773,17 +773,38 @@ static void test_fftnsi_align(void)
 	mafft_destroy(ctx);
 }
 
-/* LINSI (L-INS-i) requires tbfast with -L which invokes pairlocalalign.
- * pairlocalalign calls external tools (LAST, etc.) via system(). These
- * are not available in a minimal build environment. LINSI is wired into
- * the API and the dispatch code is correct, but the test is skipped
- * until the pairlocalalign external-tool dependency is resolved.
- * GINSI (-A) and EINSI (-N) have the same dependency. */
-static void test_linsi_placeholder(void)
+/* LINSI/GINSI/EINSI require external tools (LAST).
+ * If tools are available, alignment should succeed.
+ * If not, mafft_align should return a clear error, not hang or crash. */
+static void test_linsi_external_tool_check(void)
 {
-	/* Placeholder: LINSI is enabled in the API but not tested here
-	 * because tbfast -L requires external pairwise alignment tools. */
-	n_pass++; /* count as passed to keep test count stable */
+	mafft_config_t cfg;
+	mafft_config_init(&cfg);
+	cfg.strategy = MAFFT_STRATEGY_LINSI;
+	cfg.seqtype = MAFFT_SEQ_DNA;
+	cfg.max_iterate = 2;
+
+	mafft_ctx_t *ctx = mafft_create(&cfg);
+	mafft_output_t *out = NULL;
+	int rc = mafft_align(ctx, dna_names, dna_seqs, 3, &out, NULL);
+
+	if (rc == MAFFT_OK)
+	{
+		/* LAST is installed -- alignment worked */
+		CHECK(out != NULL, "linsi: output non-NULL (LAST available)");
+		CHECK(out->n_seqs == 3, "linsi: 3 sequences (LAST available)");
+		if (out) mafft_output_free(out);
+	}
+	else
+	{
+		/* LAST not installed -- should get clear error, not crash */
+		CHECK(rc == MAFFT_ERR_INVALID_INPUT, "linsi: returns error when LAST missing");
+		CHECK(out == NULL, "linsi: no output when LAST missing");
+		const char *err = mafft_last_error(ctx);
+		CHECK(strstr(err, "lastdb") != NULL || strstr(err, "LAST") != NULL,
+		      "linsi: error message mentions LAST");
+	}
+	mafft_destroy(ctx);
 }
 
 /* ---- Sequential DNA then protein test (Phase 4) ---- */
@@ -1047,7 +1068,7 @@ int main(void)
 	test_fftns2_vs_native();
 	test_fftns2_protein_vs_native();
 	test_fftnsi_align();
-	test_linsi_placeholder();
+	test_linsi_external_tool_check();
 	test_concurrency();
 	test_sequential_dna_then_protein();
 	test_sequential_protein_then_dna();

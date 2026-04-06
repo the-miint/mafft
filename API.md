@@ -107,12 +107,23 @@ mafft_config_init(&cfg);
 | `MAFFT_STRATEGY_FFTNS2` | `mafft --retree 2` | Fast progressive (FFT-NS-2). |
 | `MAFFT_STRATEGY_FFTNSI` | `mafft --retree 2 --maxiterate 2` | Progressive + refinement. |
 | `MAFFT_STRATEGY_LINSI` | `mafft --localpair --maxiterate 1000` | Most accurate for small datasets. |
-| `MAFFT_STRATEGY_GINSI` | `mafft --globalpair --maxiterate 1000` | Global pairwise + refinement. |
-| `MAFFT_STRATEGY_EINSI` | `mafft --genafpair --maxiterate 1000` | For sequences with large gaps. |
+| `MAFFT_STRATEGY_GINSI` | `mafft --globalpair --maxiterate 1000` | Global pairwise + refinement. Requires LAST. |
+| `MAFFT_STRATEGY_EINSI` | `mafft --genafpair --maxiterate 1000` | For sequences with large gaps. Requires LAST. |
 | `MAFFT_STRATEGY_PARTTREE` | `mafft --parttree` | Fast for large datasets (10k+ seqs). |
 
-**Currently implemented:** `MAFFT_STRATEGY_PARTTREE`.  Others return
-`MAFFT_ERR_INVALID_INPUT` until later phases are complete.
+**Implemented:** PARTTREE, FFTNS2, FFTNSI, AUTO, LINSI, GINSI, EINSI.
+
+AUTO selects FFTNSI for small inputs (n<500, len<10k), FFTNS2 for medium
+(n<200k), and PARTTREE for large datasets.
+
+### External tool requirements
+
+LINSI, GINSI, and EINSI require the [LAST aligner](https://gitlab.com/mcfrith/last)
+(`lastdb` and `lastal` binaries) to be installed and available in `PATH`.
+If these tools are not found, `mafft_align()` returns `MAFFT_ERR_INVALID_INPUT`
+with an error message naming the missing tool and suggesting alternatives.
+
+PARTTREE, FFTNS2, FFTNSI, and AUTO have no external dependencies.
 
 ## Context lifecycle
 

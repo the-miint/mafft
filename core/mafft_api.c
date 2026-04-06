@@ -791,6 +791,48 @@ int mafft_align(mafft_ctx_t *ctx,
 		return MAFFT_ERR_INVALID_INPUT;
 	}
 
+	/* LINSI/GINSI/EINSI require external pairwise alignment tools.
+	 * Check that they exist before committing to the strategy. */
+	if( strategy == MAFFT_STRATEGY_LINSI ||
+	    strategy == MAFFT_STRATEGY_GINSI ||
+	    strategy == MAFFT_STRATEGY_EINSI )
+	{
+		const char *tool = NULL;
+		/* tbfast -L/-A/-N calls pairlocalalign which uses LAST by default */
+		if( access( "lastdb", X_OK ) != 0 )
+		{
+			/* Check PATH */
+			char *path = getenv( "PATH" );
+			int found = 0;
+			if( path )
+			{
+				char *pathcopy = strdup( path );
+				char *dir = strtok( pathcopy, ":" );
+				while( dir )
+				{
+					char fullpath[1024];
+					snprintf( fullpath, sizeof(fullpath), "%s/lastdb", dir );
+					if( access( fullpath, X_OK ) == 0 ) { found = 1; break; }
+					dir = strtok( NULL, ":" );
+				}
+				free( pathcopy );
+			}
+			if( !found ) tool = "lastdb/lastal (LAST aligner)";
+		}
+		if( tool )
+		{
+			const char *stratname =
+				strategy == MAFFT_STRATEGY_LINSI ? "LINSI" :
+				strategy == MAFFT_STRATEGY_GINSI ? "GINSI" : "EINSI";
+			set_error( ctx,
+				"%s requires external tool '%s' which was not found in PATH. "
+				"Install LAST (https://gitlab.com/mcfrith/last) or use "
+				"MAFFT_STRATEGY_FFTNSI / MAFFT_STRATEGY_FFTNS2 instead.",
+				stratname, tool );
+			return MAFFT_ERR_INVALID_INPUT;
+		}
+	}
+
 	/* Resolve sequence type -- must be explicit before calling engine */
 	resolved_seqtype = ctx->config.seqtype;
 	if( resolved_seqtype == MAFFT_SEQ_AUTO )
