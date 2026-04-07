@@ -136,7 +136,20 @@ See also http://mafft.cbrc.jp/alignment/software/
      # rm /usr/local/share/man/man1/mafft*
 
 
-7. LICENSE
+7. C LIBRARY API
+     MAFFT can be embedded as a C library in other programs.
+     See API.md for the full documentation, including config options,
+     alignment strategies, log capture, thread safety, and examples.
+
+     Quick build:
+     % cd core
+     % make libmafft_parttree.a
+
+     Include "mafft_api.h" in your code and link with:
+     % gcc -o myprogram myprogram.c -Lcore -lmafft_parttree -lm -lpthread
+
+
+8. LICENSE
      See the './license' file.
 
      If you have the extensions, see also the './license.extensions' file, 
