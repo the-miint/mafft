@@ -332,12 +332,8 @@ static int build_parttree_argv(const mafft_config_t *cfg, int resolved_seqtype,
 	/* Reorder output by similarity */
 	PUSH_ARG( "-x" );
 
-	/* Thread count */
-	if( cfg->n_threads > 1 )
-	{
-		PUSH_ARG( "-C" );
-		PUSH_ARG_FMT( "%d", cfg->n_threads );
-	}
+	/* No -C: splittbfast.c parses '-C' as alg='C', not nthread (unlike disttbfast).
+	 * The wrapper script also omits -C here (mafft.tmpl line 2531). */
 
 #undef PUSH_ARG
 #undef PUSH_ARG_FMT
