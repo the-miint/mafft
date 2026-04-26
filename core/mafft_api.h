@@ -4,6 +4,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* ---- Error codes (negative = error, 0 = success) ---- */
 #define MAFFT_OK                    0
 #define MAFFT_ERR_NOMEM            -1
@@ -100,5 +104,9 @@ const char *mafft_ctx_log(const mafft_ctx_t *ctx);
 /* ---- Error reporting ---- */
 const char *mafft_strerror(int code);
 const char *mafft_last_error(const mafft_ctx_t *ctx);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* MAFFT_API_H */
