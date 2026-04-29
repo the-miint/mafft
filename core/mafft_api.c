@@ -418,12 +418,14 @@ static int build_fftns2_argv(const mafft_config_t *cfg, int resolved_seqtype,
 	PUSH_ARG( "-W" );
 	PUSH_ARG( "6" );
 
-	/* Write hat2/hat3 when chaining to dvtditr for iterative refinement */
+	/* Write hat2 when chaining to dvtditr for iterative refinement.
+	 * Note: do NOT pass -T here — that sets noalign=1 in disttbfast and
+	 * triggers an early goto chudan (disttbfast.c:4202-4207) before the
+	 * progressive alignment runs, leaving work_seqs un-aligned. dvtditr
+	 * Stage 2 then receives un-aligned input and returns -1.
+	 * -y alone writes hat2 *and* lets the alignment run to completion. */
 	if( write_hat2 )
-	{
 		PUSH_ARG( "-y" );
-		PUSH_ARG( "-T" );
-	}
 
 	/* Thread count */
 	if( cfg->n_threads > 1 )
