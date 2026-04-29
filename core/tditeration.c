@@ -1330,6 +1330,77 @@ int TreeDependentIteration( int locnjob, char **name, int nlen[M],
 	Writeoptions( trap_g );
 	fflush( trap_g );
 
+	/* Library-mode safety: the alloc-once block below sizes ~30 static
+	 * buffers to (locnjob, alloclen). On a subsequent call with a different
+	 * size, those buffers go out of bounds (calcBranchWeight indexes
+	 * branchWeight[parent.step][...] where parent.step can be up to
+	 * locnjob-2). Track the size used at allocation; on a mismatch, free
+	 * all statics and reset effarr to NULL so the alloc-once block fires
+	 * again at the new size. */
+	{
+		static int alloc_locnjob = 0;
+		static int alloc_alloclen = 0;
+		static int alloc_score_check = -1;
+		static int alloc_specconsid = -1;
+		static int alloc_rnakozo = -1;
+		static int alloc_constraint = -1;
+		if( effarr != NULL &&
+		    ( alloc_locnjob != locnjob || alloc_alloclen != alloclen ||
+		      alloc_score_check != score_check ||
+		      alloc_specconsid  != ( specificityconsideration != 0 ) ||
+		      alloc_rnakozo     != ( rnakozo ? 1 : 0 ) ||
+		      alloc_constraint  != ( constraint ? 1 : 0 ) ) )
+		{
+			if( indication1 ) { free( indication1 ); indication1 = NULL; }
+			if( indication2 ) { free( indication2 ); indication2 = NULL; }
+			FreeDoubleVec( effarr ); effarr = NULL;
+			FreeDoubleVec( distarr ); distarr = NULL;
+			FreeDoubleVec( effarrforlocalhom ); effarrforlocalhom = NULL;
+			FreeDoubleVec( effarr1 ); effarr1 = NULL;
+			FreeDoubleVec( effarr2 ); effarr2 = NULL;
+			if( mseq1 ) { FreeCharMtx( mseq1 ); mseq1 = NULL; }
+			if( mseq2 ) { FreeCharMtx( mseq2 ); mseq2 = NULL; }
+			if( mtx ) { FreeDoubleMtx( mtx ); mtx = NULL; }
+			if( node ) { FreeIntMtx( node ); node = NULL; }
+			FreeIntVec( branchnode ); branchnode = NULL;
+			if( branchWeight ) { FreeDoubleMtx( branchWeight ); branchWeight = NULL; }
+			if( history ) { FreeFloatCub( history ); history = NULL; }
+			if( stopol ) { free( stopol ); stopol = NULL; }
+			FreeIntVec( gapmap1 ); gapmap1 = NULL;
+			FreeIntVec( gapmap2 ); gapmap2 = NULL;
+			if( imanoten ) { FreeDoubleMtx( imanoten ); imanoten = NULL; }
+			if( smalldistmtx ) { FreeDoubleMtx( smalldistmtx ); smalldistmtx = NULL; }
+			if( scoringmatrices ) { FreeDoubleCub( scoringmatrices ); scoringmatrices = NULL; }
+			if( eff1s ) { FreeDoubleMtx( eff1s ); eff1s = NULL; }
+			if( eff2s ) { FreeDoubleMtx( eff2s ); eff2s = NULL; }
+			if( whichmtx ) { FreeIntMtx( whichmtx ); whichmtx = NULL; }
+			FreeDoubleVec( effarr1_kozo ); effarr1_kozo = NULL;
+			FreeDoubleVec( effarr2_kozo ); effarr2_kozo = NULL;
+			FreeDoubleVec( effarr_kozo ); effarr_kozo = NULL;
+			if( pairbuf ) { free( pairbuf ); pairbuf = NULL; }
+			if( memlist ) { FreeIntMtx( memlist ); memlist = NULL; }
+			if( rnapairboth ) { free( rnapairboth ); rnapairboth = NULL; }
+			if( localhomshrink )
+			{
+				int ii;
+				for( ii = 0; ii < alloc_locnjob; ii++ )
+					if( localhomshrink[ii] ) free( localhomshrink[ii] );
+				free( localhomshrink );
+				localhomshrink = NULL;
+			}
+			if( swaplist ) { free( swaplist ); swaplist = NULL; }
+		}
+		if( effarr == NULL )
+		{
+			alloc_locnjob = locnjob;
+			alloc_alloclen = alloclen;
+			alloc_score_check = score_check;
+			alloc_specconsid = ( specificityconsideration != 0 );
+			alloc_rnakozo = ( rnakozo ? 1 : 0 );
+			alloc_constraint = ( constraint ? 1 : 0 );
+		}
+	}
+
 	if( effarr == NULL ) /* locnjob == njob ni kagiru */
 	{
 		indication1 = AllocateCharVec( 150 );

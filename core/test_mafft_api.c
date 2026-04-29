@@ -773,6 +773,101 @@ static void test_fftnsi_align(void)
 	mafft_destroy(ctx);
 }
 
+/* Regression: FFTNSI must survive an N-growth pattern across calls.
+ *
+ * History: a small FFTNSI run (e.g. n=2) followed by a larger FFTNSI run
+ * (e.g. n=10) segfaulted inside the second mafft_align. Same-N-twice and
+ * big-then-small both worked, which pointed at a global buffer sized once
+ * during the first call and then accessed out-of-bounds during the second.
+ *
+ * Hits the same usage pattern as the duckdb-miint catch2 suite, where small
+ * synthetic test cases run before a 36-opsin protein fixture under AUTO
+ * (which routes n<500 + len<10000 to FFTNSI). */
+static void test_fftnsi_repeated_growing_n(void)
+{
+	mafft_config_t cfg;
+	int rc;
+
+	/* Call 1: small N=2. */
+	{
+		mafft_config_init(&cfg);
+		cfg.strategy = MAFFT_STRATEGY_FFTNSI;
+		cfg.seqtype = MAFFT_SEQ_DNA;
+		cfg.n_threads = 1;
+		mafft_ctx_t *ctx = mafft_create(&cfg);
+		mafft_output_t *out = NULL;
+		const char *names[2] = {"a", "b"};
+		const char *seqs[2]  = {"ACGTACGT", "TGCATGCA"};
+		rc = mafft_align(ctx, names, seqs, 2, &out, NULL);
+		CHECK(rc == MAFFT_OK, "fftnsi-grow: small N=2 first call OK");
+		if (out) mafft_output_free(out);
+		mafft_destroy(ctx);
+	}
+
+	/* Call 2: larger N=10 in same process. Pre-fix this segfaulted. */
+	{
+		mafft_config_init(&cfg);
+		cfg.strategy = MAFFT_STRATEGY_FFTNSI;
+		cfg.seqtype = MAFFT_SEQ_DNA;
+		cfg.n_threads = 1;
+		mafft_ctx_t *ctx = mafft_create(&cfg);
+		mafft_output_t *out = NULL;
+		const char *names[10] = {"s0","s1","s2","s3","s4","s5","s6","s7","s8","s9"};
+		const char *seqs[10] = {
+			"ACGTACGTACGTACGT",
+			"ACGTACGAACGTACGT",
+			"ACGAACGTACGTACGT",
+			"ACGTACGTACGTACGA",
+			"ACGTACGTACGAACGT",
+			"AGGTACGTACGTACGT",
+			"ACGTAGGTACGTACGT",
+			"ACGTACGTAGGTACGT",
+			"ACGTACGTACGTAGGT",
+			"ACGTACGTACGTACGT"
+		};
+		rc = mafft_align(ctx, names, seqs, 10, &out, NULL);
+		CHECK(rc == MAFFT_OK, "fftnsi-grow: larger N=10 second call OK (regression)");
+		if (out)
+		{
+			CHECK(out->n_seqs == 10, "fftnsi-grow: 10 output sequences");
+			CHECK(out->aligned_len > 0, "fftnsi-grow: positive aligned_len");
+			mafft_output_free(out);
+		}
+		mafft_destroy(ctx);
+	}
+
+	/* Call 3: protein N=10 after DNA. Cross-type N-growth must also be safe. */
+	{
+		mafft_config_init(&cfg);
+		cfg.strategy = MAFFT_STRATEGY_FFTNSI;
+		cfg.seqtype = MAFFT_SEQ_PROTEIN;
+		cfg.n_threads = 1;
+		mafft_ctx_t *ctx = mafft_create(&cfg);
+		mafft_output_t *out = NULL;
+		const char *names[10] = {"p0","p1","p2","p3","p4","p5","p6","p7","p8","p9"};
+		const char *seqs[10] = {
+			"MKFLILLFNILCLFPVLAADNHGVS",
+			"MKFLVLLFNILCLFPVLAADNHGVS",
+			"MKFLILLFNILCLFPVLAADNHGVQ",
+			"MKFLILLFNILCLFPVLAADNHGVK",
+			"MKFLILLFNILCLFPVLAADNHGVE",
+			"MKYLILLFNILCLFPVLAADNHGVS",
+			"MKFLILLWNILCLFPVLAADNHGVS",
+			"MKFLILLFAILCLFPVLAADNHGVS",
+			"MKFLILLFNVLCLFPVLAADNHGVS",
+			"MKFLILLFNILCLFPVLAADNHGVA"
+		};
+		rc = mafft_align(ctx, names, seqs, 10, &out, NULL);
+		CHECK(rc == MAFFT_OK, "fftnsi-grow: protein N=10 after DNA OK (regression)");
+		if (out)
+		{
+			CHECK(out->n_seqs == 10, "fftnsi-grow: 10 protein output sequences");
+			mafft_output_free(out);
+		}
+		mafft_destroy(ctx);
+	}
+}
+
 /* LINSI/GINSI/EINSI require external tools (LAST).
  * If tools are available, alignment should succeed.
  * If not, mafft_align should return a clear error, not hang or crash. */
@@ -1068,6 +1163,7 @@ int main(void)
 	test_fftns2_vs_native();
 	test_fftns2_protein_vs_native();
 	test_fftnsi_align();
+	test_fftnsi_repeated_growing_n();
 	test_linsi_external_tool_check();
 	test_concurrency();
 	test_sequential_dna_then_protein();
