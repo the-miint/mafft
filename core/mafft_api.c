@@ -651,6 +651,11 @@ static int remove_cb(const char *fpath, const struct stat *sb,
 static void cleanup_tmpdir(const char *dir)
 {
 	if( !dir ) return;
+	if( getenv( "MAFFT_KEEP_TMPDIR" ) )
+	{
+		fprintf( stderr, "MAFFT_KEEP_TMPDIR set: leaving %s in place\n", dir );
+		return;
+	}
 	nftw( dir, remove_cb, 16, FTW_DEPTH | FTW_PHYS );
 }
 

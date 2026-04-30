@@ -1209,6 +1209,19 @@ int dvtditr_library( int ngui, int lgui, char **namegui, char **seqgui,
 	 * dvtditr writes to prep_g (the "pre" file). Read it back. */
 	if( rc == 0 )
 	{
+		/* dvtditr_main writes the result to prep_g (the "pre" file) but never
+		 * flushes or closes it before returning. The last writePre's stdio
+		 * buffer may still hold a tail of the alignment when we open "pre"
+		 * here for read, producing truncated rows (single-thread) or random
+		 * per-row widths (multi-thread). Flush + close + reopen for write so
+		 * the read below sees the complete file. */
+		if( prep_g )
+		{
+			fflush( prep_g );
+			fclose( prep_g );
+			prep_g = NULL;
+		}
+
 		FILE *prefp = fopen( "pre", "r" );
 		if( prefp )
 		{

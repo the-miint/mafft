@@ -868,6 +868,104 @@ static void test_fftnsi_repeated_growing_n(void)
 	}
 }
 
+/* Regression: every row of an FFTNSI alignment must end at out->aligned_len.
+ *
+ * History: dvtditr_main writes its result to prep_g (the "pre" file) but
+ * never flushes/closes before returning. dvtditr_library would then fopen
+ * "pre" for read while libc still held the tail of the alignment in
+ * prep_g's stdio buffer, producing truncated work_seqs entries (single-
+ * thread: a deterministic short row; multi-thread: random per-row widths).
+ * pack_output reports out->aligned_len = strlen(seqs[0]) so the field
+ * looked plausible while later rows had inconsistent strlen.
+ *
+ * Reproduces only on a fixture large enough that the prep_g buffer doesn't
+ * fully drain on its own — 3-sequence test_fftnsi_align is too small to
+ * trigger it. The 36-opsin protein fixture (test/sample) is the smallest
+ * input that does. */
+static void test_fftnsi_protein_row_widths(void)
+{
+	FILE *fp = fopen( "../test/sample", "r" );
+	char **names = NULL;
+	char **seqs = NULL;
+	int n = 0, cap = 0;
+	char line[1 << 16];
+
+	if( !fp )
+	{
+		fprintf( stderr, "SKIP: test_fftnsi_protein_row_widths: cannot open ../test/sample\n" );
+		return;
+	}
+
+	while( fgets( line, sizeof(line), fp ) )
+	{
+		size_t L = strlen( line );
+		while( L && (line[L-1] == '\n' || line[L-1] == '\r') ) line[--L] = 0;
+		if( !L ) continue;
+		if( line[0] == '>' )
+		{
+			if( n >= cap )
+			{
+				cap = cap ? cap * 2 : 8;
+				names = (char **)realloc( names, cap * sizeof(*names) );
+				seqs  = (char **)realloc( seqs,  cap * sizeof(*seqs) );
+			}
+			names[n] = strdup( line + 1 );
+			seqs[n] = NULL;
+			n++;
+		}
+		else
+		{
+			int idx = n - 1;
+			size_t cur = seqs[idx] ? strlen( seqs[idx] ) : 0;
+			seqs[idx] = (char *)realloc( seqs[idx], cur + L + 1 );
+			memcpy( seqs[idx] + cur, line, L );
+			seqs[idx][cur + L] = 0;
+		}
+	}
+	fclose( fp );
+
+	CHECK( n == 36, "fftnsi-rows: loaded 36 sequences from fixture" );
+	if( n != 36 )
+	{
+		int j;
+		for( j = 0; j < n; j++ ) { free( names[j] ); free( seqs[j] ); }
+		free( names ); free( seqs );
+		return;
+	}
+
+	mafft_config_t cfg;
+	mafft_config_init( &cfg );
+	cfg.strategy = MAFFT_STRATEGY_FFTNSI;
+	cfg.seqtype  = MAFFT_SEQ_PROTEIN;
+	cfg.n_threads = 1;
+	mafft_ctx_t *ctx = mafft_create( &cfg );
+	mafft_output_t *out = NULL;
+	int rc = mafft_align( ctx, (const char **)names, (const char **)seqs, n, &out, NULL );
+
+	CHECK( rc == MAFFT_OK, "fftnsi-rows: align returns MAFFT_OK" );
+	if( rc == MAFFT_OK && out )
+	{
+		CHECK( out->n_seqs == 36, "fftnsi-rows: 36 output sequences" );
+		CHECK( out->aligned_len > 0, "fftnsi-rows: positive aligned_len" );
+		int bad = 0;
+		int i;
+		for( i = 0; i < out->n_seqs; i++ )
+		{
+			int sl = (int)strlen( out->seqs[i] );
+			if( sl != out->aligned_len ) bad++;
+		}
+		CHECK( bad == 0, "fftnsi-rows: every row strlen == aligned_len (regression)" );
+	}
+	if( out ) mafft_output_free( out );
+	mafft_destroy( ctx );
+
+	{
+		int j;
+		for( j = 0; j < n; j++ ) { free( names[j] ); free( seqs[j] ); }
+		free( names ); free( seqs );
+	}
+}
+
 /* LINSI/GINSI/EINSI require external tools (LAST).
  * If tools are available, alignment should succeed.
  * If not, mafft_align should return a clear error, not hang or crash. */
@@ -1164,6 +1262,7 @@ int main(void)
 	test_fftns2_protein_vs_native();
 	test_fftnsi_align();
 	test_fftnsi_repeated_growing_n();
+	test_fftnsi_protein_row_widths();
 	test_linsi_external_tool_check();
 	test_concurrency();
 	test_sequential_dna_then_protein();
